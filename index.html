@@ -609,6 +609,14 @@
         <h1 style="margin:0;font-size:26px;font-weight:800;letter-spacing:-.02em;">Валюты</h1>
         <button onClick="{{ onAddCurrency }}" style="height:42px;padding:0 18px;border:none;background:#2a5fd0;border-radius:11px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;">+ Валюта</button>
       </div>
+      <div style="background:#fff;border:1px solid #e9ece9;border-radius:16px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+        <div>
+          <div style="font-size:14px;font-weight:800;color:#1a1f1c;">Автоматическое обновление курсов</div>
+          <div style="font-size:12px;color:#8a928c;font-weight:600;margin-top:3px;">Фиат — open.er-api.com, крипта — CoinGecko. {{ ratesAtTxt }}</div>
+          <sc-if value="{{ ratesStatus }}" hint-placeholder-val=""><div style="font-size:12px;color:#2a5fd0;font-weight:700;margin-top:4px;">{{ ratesStatus }}</div></sc-if>
+        </div>
+        <button onClick="{{ refreshRates }}" style="height:40px;padding:0 18px;border:1px solid #cfdcfa;background:#eef4ff;border-radius:10px;font-size:13px;font-weight:800;color:#2a5fd0;cursor:pointer;">{{ ratesBtnLabel }}</button>
+      </div>
       <div style="background:#fff;border:1px solid #e9ece9;border-radius:16px;overflow:hidden;">
         <sc-for list="{{ curRows }}" as="c" hint-placeholder-count="6">
           <div style="display:flex;align-items:center;gap:16px;padding:15px 18px;border-bottom:1px solid #f0f2f0;">
@@ -625,7 +633,7 @@
           </div>
         </sc-for>
       </div>
-      <p style="font-size:12px;color:#9aa19b;font-weight:600;margin-top:14px;line-height:1.5;">Курс задаётся вручную: сколько основной валюты стоит 1 единица. При смене основной валюты все курсы пересчитываются автоматически.</p>
+      <p style="font-size:12px;color:#9aa19b;font-weight:600;margin-top:14px;line-height:1.5;">Курсы обновляются автоматически при входе (не чаще раза в 30 минут) и по кнопке выше. Можно в любой момент поправить вручную — нажмите ✎ у валюты. При смене основной валюты все курсы пересчитываются.</p>
     </div>
     </sc-if>
   </main>
@@ -842,6 +850,7 @@ class Component extends DCLogic {
     locked: false, pwHash: null, pwInput: '', pwError: '',
     pwOld: '', pwNew: '', pwNew2: '', pwMsg: '', pwSetError: '',
     submitting: false,
+    ratesBusy: false, ratesStatus: '', ratesAt: null,
   };
 
   // «ка-чинг» кассового аппарата через Web Audio (без внешних файлов)
@@ -891,7 +900,35 @@ class Component extends DCLogic {
     this.setState({ flt: savedFlt || this.initFlt(), fltDraft: savedFlt ? Object.assign({}, savedFlt) : this.initFlt() });
     await this.reload();
     this.loadPassword();
+    this.autoRefreshRates();
   }
+
+  async autoRefreshRates() {
+    // Автообновление при входе, но не чаще раза в 30 минут (бережём API).
+    try {
+      const at = this.DL.getRatesUpdatedAt();
+      if (at && (Date.now() - new Date(at).getTime()) < 30 * 60 * 1000) {
+        this.setState({ ratesAt: at });
+        return;
+      }
+      await this.refreshRatesNow(true);
+    } catch (e) {}
+  }
+  refreshRatesNow = async (silent) => {
+    if (this.state.ratesBusy) return;
+    this.setState({ ratesBusy: true, ratesStatus: '' });
+    try {
+      const res = await this.DL.updateRates();
+      const parts = [];
+      if (res.fiatOk) parts.push('фиат');
+      if (res.cryptoOk) parts.push('крипта');
+      const okTxt = parts.length ? 'обновлено (' + parts.join(' + ') + ')' : 'источники недоступны';
+      this.setState({ ratesBusy: false, ratesAt: res.at, ratesStatus: 'Курсы ' + okTxt + (res.count ? ' · ' + res.count + ' валют' : '') });
+      if (res.count) await this.reload();
+    } catch (e) {
+      this.setState({ ratesBusy: false, ratesStatus: 'Не удалось обновить курсы: ' + (e.message || e) });
+    }
+  };
 
   loadSavedFlt() {
     try { const raw = localStorage.getItem('hm_records_flt'); if (raw) { const f = JSON.parse(raw); if (f && f.from && f.to) return f; } } catch (e) {}
@@ -1390,6 +1427,12 @@ class Component extends DCLogic {
         onEdit: this.openCurrency(c), onDelete: this.delCurrency(c.id), onSetBase: this.makeBase(c.id),
       }));
       out.onAddCurrency = this.openCurrency(null);
+      out.ratesBusy = this.state.ratesBusy;
+      out.refreshRates = () => this.refreshRatesNow(false);
+      out.ratesStatus = this.state.ratesStatus || '';
+      const at = this.state.ratesAt || this.DL.getRatesUpdatedAt();
+      out.ratesAtTxt = at ? 'Обновлено: ' + new Date(at).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Ещё не обновлялись';
+      out.ratesBtnLabel = this.state.ratesBusy ? 'Обновляю…' : 'Обновить сейчас';
     }
     if (screen === 'categories') {
       const build = (kind) => d.categories.filter((c) => c.kind === kind && !c.parent_id).map((p) => ({

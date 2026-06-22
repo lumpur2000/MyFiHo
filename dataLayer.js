@@ -346,6 +346,103 @@ export async function resetDemo() {
   localStorage.setItem(DEMO_KEY, JSON.stringify(seedDemo()));
 }
 
+// ===================== АВТО-КУРСЫ ВАЛЮТ =====================
+// Фиат — open.er-api.com (без ключа), крипта — CoinGecko (без ключа).
+// Обновляется только rate_to_base у валют с известным ISO/тикером; основная
+// валюта и неизвестные «ручные» валюты не трогаются.
+const COINGECKO_IDS = {
+  USDT: 'tether', USDC: 'usd-coin', BTC: 'bitcoin', ETH: 'ethereum', BNB: 'binancecoin',
+  SOL: 'solana', XRP: 'ripple', TON: 'the-open-network', TRX: 'tron', DOGE: 'dogecoin',
+  ADA: 'cardano', DOT: 'polkadot', MATIC: 'matic-network', DAI: 'dai', LTC: 'litecoin',
+};
+const RATES_AT_KEY = 'hm_rates_at';
+
+async function getCurrenciesRaw() {
+  if (mode() === 'demo') return readDemo().currencies;
+  const { data, error } = await client().from('currencies').select('*');
+  if (error) throw new Error(error.message);
+  return data || [];
+}
+
+// Считает новые курсы (rate_to_base = сколько ОСНОВНОЙ валюты стоит 1 единица).
+async function computeRateUpdates(currencies) {
+  const base = currencies.find((c) => c.is_base);
+  if (!base) throw new Error('Не задана основная валюта');
+  const baseCode = (base.code || '').toUpperCase();
+  const updates = [];
+  const result = { fiatOk: false, cryptoOk: false, skipped: [] };
+
+  const fiat = currencies.filter((c) => !c.is_base && !c.is_crypto);
+  const crypto = currencies.filter((c) => !c.is_base && c.is_crypto);
+
+  // --- ФИАТ ---
+  if (fiat.length) {
+    try {
+      const r = await fetch('https://open.er-api.com/v6/latest/' + encodeURIComponent(baseCode));
+      const j = await r.json();
+      if (j && j.result === 'success' && j.rates) {
+        result.fiatOk = true;
+        for (const c of fiat) {
+          const per = j.rates[(c.code || '').toUpperCase()]; // X за 1 базовую
+          if (per && per > 0) updates.push({ id: c.id, rate_to_base: round8(1 / per) });
+          else result.skipped.push(c.code);
+        }
+      }
+    } catch (e) { /* нет сети — пропускаем */ }
+  }
+
+  // --- КРИПТА ---
+  if (crypto.length) {
+    const pairs = crypto.map((c) => ({ c, id: COINGECKO_IDS[(c.code || '').toUpperCase()] }));
+    const ids = pairs.filter((p) => p.id).map((p) => p.id);
+    pairs.filter((p) => !p.id).forEach((p) => result.skipped.push(p.c.code));
+    if (ids.length) {
+      const vs = baseCode.toLowerCase();
+      try {
+        const url = 'https://api.coingecko.com/api/v3/simple/price?ids=' + [...new Set(ids)].join(',') + '&vs_currencies=' + encodeURIComponent(vs) + ',usd';
+        const r = await fetch(url);
+        const j = await r.json();
+        // запасной курс USD→базовая (через фиат-обновление), если CoinGecko не знает vs
+        const usdRow = updates.find((u) => { const cc = currencies.find((x) => x.id === u.id); return cc && (cc.code || '').toUpperCase() === 'USD'; });
+        const usdToBase = baseCode === 'USD' ? 1 : (usdRow ? usdRow.rate_to_base : null);
+        for (const p of pairs) {
+          if (!p.id || !j[p.id]) continue;
+          let val = j[p.id][vs];
+          if ((val == null || val <= 0) && j[p.id].usd != null && usdToBase) val = j[p.id].usd * usdToBase;
+          if (val && val > 0) { updates.push({ id: p.c.id, rate_to_base: round8(val) }); result.cryptoOk = true; }
+        }
+      } catch (e) { /* нет сети — пропускаем */ }
+    }
+  }
+  return { updates, result };
+}
+
+function round8(n) { return Math.round(Number(n) * 1e8) / 1e8; }
+
+// Обновляет курсы в хранилище. Возвращает {count, fiatOk, cryptoOk, at, skipped}.
+export async function updateRates() {
+  const currencies = await getCurrenciesRaw();
+  const { updates, result } = await computeRateUpdates(currencies);
+  if (updates.length) {
+    if (mode() === 'demo') {
+      await demoMutate((db) => updates.forEach((u) => { const c = db.currencies.find((x) => x.id === u.id); if (c) c.rate_to_base = u.rate_to_base; }));
+    } else {
+      const sb = client();
+      for (const u of updates) {
+        const { error } = await sb.from('currencies').update({ rate_to_base: u.rate_to_base }).eq('id', u.id);
+        if (error) throw new Error(error.message);
+      }
+    }
+  }
+  const at = new Date().toISOString();
+  try { localStorage.setItem(RATES_AT_KEY, at); } catch (e) {}
+  return { count: updates.length, fiatOk: result.fiatOk, cryptoOk: result.cryptoOk, skipped: result.skipped, at };
+}
+
+export function getRatesUpdatedAt() {
+  try { return localStorage.getItem(RATES_AT_KEY) || null; } catch (e) { return null; }
+}
+
 // ===================== ПАРОЛЬ (мягкая защита входа) =====================
 // Хэш пароля хранится: в demo — в localStorage; с Supabase — в settings.password_hash.
 const PWD_KEY = 'hm_pwd';
