@@ -29,7 +29,13 @@ export function formatNum(n, digits) {
 // Деньги с символом валюты. Крипта — больше знаков.
 export function formatMoney(amount, currency) {
   let digits = 2;
-  if (currency && currency.is_crypto) digits = Math.abs(Number(amount)) < 1 ? 6 : 4;
+  // Криптовалюты: обычно 2 знака; больше — только для совсем мелких сумм,
+  // чтобы не показывать 0,00 там, где значение ненулевое.
+  if (currency && currency.is_crypto) {
+    const a = Math.abs(Number(amount) || 0);
+    if (a > 0 && a < 0.01) digits = 8;
+    else digits = 2;
+  }
   const sym = currency ? currency.symbol || currency.code : '';
   return formatNum(amount, digits) + (sym ? ' ' + sym : '');
 }

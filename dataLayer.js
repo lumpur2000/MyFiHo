@@ -154,11 +154,27 @@ export async function loadAll() {
   const tables = ['currencies', 'account_groups', 'accounts', 'account_currencies', 'categories', 'operations'];
   const out = {};
   for (const t of tables) {
-    const { data, error } = await sb.from(t).select('*');
-    if (error) throw new Error(`Ошибка загрузки ${t}: ${error.message}`);
-    out[t] = data || [];
+    const rows = await fetchAll(sb, t);
+    out[t] = rows;
   }
   return normalize(out);
+}
+
+// Постраничная загрузка: Supabase отдаёт максимум 1000 строк за запрос,
+// поэтому забираем данные блоками по 1000, пока не кончатся.
+async function fetchAll(sb, table) {
+  const PAGE = 1000;
+  let from = 0;
+  const all = [];
+  for (;;) {
+    const { data, error } = await sb.from(table).select('*').range(from, from + PAGE - 1);
+    if (error) throw new Error(`Ошибка загрузки ${table}: ${error.message}`);
+    const chunk = data || [];
+    all.push(...chunk);
+    if (chunk.length < PAGE) break;
+    from += PAGE;
+  }
+  return all;
 }
 
 function normalize(db) {
@@ -191,6 +207,22 @@ function replaceById(arr, row) {
   else arr.push(row);
 }
 
+// Надёжная замена .upsert() для Supabase: insert для новой строки, update для существующей.
+// (.upsert() в нашей конфигурации молча не сохранял строки — см. историю правок.)
+async function upsertRow(table, data) {
+  const sb = client();
+  const existing = await sb.from(table).select('id').eq('id', data.id).maybeSingle();
+  if (existing.error) throw new Error(existing.error.message);
+  if (existing.data) {
+    const { error } = await sb.from(table).update(data).eq('id', data.id);
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await sb.from(table).insert(data);
+    if (error) throw new Error(error.message);
+  }
+  return data;
+}
+
 // ---- Валюты ----
 export async function saveCurrency(row) {
   const data = Object.assign({}, row);
@@ -199,9 +231,7 @@ export async function saveCurrency(row) {
     await demoMutate((db) => replaceById(db.currencies, data));
     return data;
   }
-  const { error } = await client().from('currencies').upsert(data);
-  if (error) throw new Error(error.message);
-  return data;
+  return upsertRow('currencies', data);
 }
 export async function deleteCurrency(id) {
   if (mode() === 'demo') return demoMutate((db) => (db.currencies = db.currencies.filter((x) => x.id !== id)));
@@ -235,9 +265,7 @@ export async function saveGroup(row) {
     await demoMutate((db) => replaceById(db.account_groups, data));
     return data;
   }
-  const { error } = await client().from('account_groups').upsert(data);
-  if (error) throw new Error(error.message);
-  return data;
+  return upsertRow('account_groups', data);
 }
 export async function deleteGroup(id) {
   if (mode() === 'demo') return demoMutate((db) => (db.account_groups = db.account_groups.filter((x) => x.id !== id)));
@@ -259,11 +287,10 @@ export async function saveAccount(account, currencyRows) {
     return data;
   }
   const sb = client();
-  let err = (await sb.from('accounts').upsert(data)).error;
-  if (err) throw new Error(err.message);
+  await upsertRow('accounts', data);
   await sb.from('account_currencies').delete().eq('account_id', data.id);
   if (rows.length) {
-    err = (await sb.from('account_currencies').insert(rows)).error;
+    const err = (await sb.from('account_currencies').insert(rows)).error;
     if (err) throw new Error(err.message);
   }
   return data;
@@ -288,9 +315,7 @@ export async function saveCategory(row) {
     await demoMutate((db) => replaceById(db.categories, data));
     return data;
   }
-  const { error } = await client().from('categories').upsert(data);
-  if (error) throw new Error(error.message);
-  return data;
+  return upsertRow('categories', data);
 }
 export async function deleteCategory(id) {
   if (mode() === 'demo') {
@@ -308,9 +333,7 @@ export async function saveOperation(row) {
     await demoMutate((db) => replaceById(db.operations, data));
     return data;
   }
-  const { error } = await client().from('operations').upsert(data);
-  if (error) throw new Error(error.message);
-  return data;
+  return upsertRow('operations', data);
 }
 export async function deleteOperation(id) {
   if (mode() === 'demo') return demoMutate((db) => (db.operations = db.operations.filter((x) => x.id !== id)));

@@ -113,7 +113,7 @@
                   <div onClick="{{ a.onOpen }}" style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #f0f2f0;cursor:pointer;gap:12px;">
                     <div style="font-weight:700;font-size:13px;min-width:0;">{{ a.name }}</div>
                     <div style="text-align:right;flex:none;display:flex;flex-direction:column;gap:1px;">
-                      <sc-for list="{{ a.balLines }}" as="b" hint-placeholder-count="1"><div style="font-weight:800;font-size:13px;white-space:nowrap;">{{ b.txt }}</div></sc-for>
+                      <sc-for list="{{ a.balLines }}" as="b" hint-placeholder-count="1"><div style="{{ b.style }}">{{ b.txt }}</div></sc-for>
                     </div>
                   </div>
                 </sc-for>
@@ -124,7 +124,7 @@
 
         <!-- ЦЕНТР: новая операция (компактный выделенный блок) -->
         <div style="position:sticky;top:88px;background:linear-gradient(180deg,#eef4ff,#e7eefc);border:1px solid #cfdcfa;border-radius:18px;padding:18px;box-shadow:0 16px 40px -22px rgba(42,95,208,.5);">
-          <h2 style="margin:0 0 12px;font-size:16px;font-weight:800;color:#1f3a78;text-align:center;">Новая операция</h2>
+          <h2 style="margin:0 0 12px;font-size:16px;font-weight:800;color:#1f3a78;text-align:center;">{{ qaHeading }}</h2>
           <div style="display:flex;background:#dde8fb;border-radius:10px;padding:3px;gap:3px;margin-bottom:14px;">
             <sc-for list="{{ qaTabs }}" as="t" hint-placeholder-count="3"><button onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button></sc-for>
           </div>
@@ -185,6 +185,7 @@
             </div>
             <sc-if value="{{ qaError }}" hint-placeholder-val=""><div style="font-size:13px;color:#c0492f;font-weight:700;">{{ qaError }}</div></sc-if>
             <button onClick="{{ submitQuick }}" style="height:44px;border:none;border-radius:10px;background:#2a5fd0;color:#fff;font-size:15px;font-weight:800;cursor:pointer;margin-top:2px;">{{ submitLabel }}</button>
+            <sc-if value="{{ qaEditing }}" hint-placeholder-val=""><button onClick="{{ cancelQaEdit }}" style="height:38px;border:1px solid #cfdcfa;border-radius:10px;background:#fff;color:#5b635d;font-size:13px;font-weight:700;cursor:pointer;">Отменить редактирование</button></sc-if>
           </div>
         </div>
 
@@ -197,10 +198,14 @@
           <div style="background:#fff;border:1px solid #e9ece9;border-radius:16px;overflow:hidden;">
             <sc-if value="{{ recentEmpty }}" hint-placeholder-val=""><div style="padding:40px;text-align:center;color:#a3aaa5;font-weight:600;">Пока нет операций</div></sc-if>
             <sc-for list="{{ recentRows }}" as="r" hint-placeholder-count="6">
-              <div style="display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid #f3f5f3;">
+              <div style="display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid #f3f5f3;">
                 <div style="width:64px;flex:none;font-size:12px;font-weight:600;color:#8a928c;">{{ r.dateTxt }}</div>
                 <div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13px;">{{ r.title }}</div><div style="font-size:11px;color:#8a928c;font-weight:500;">{{ r.sub }}</div></div>
                 <div style="text-align:right;flex:none;"><div style="{{ r.amountStyle }}">{{ r.amountTxt }}</div><div style="font-size:11px;color:#a3aaa5;font-weight:600;">{{ r.baseTxt }}</div></div>
+                <div style="display:flex;gap:5px;flex:none;">
+                  <button onClick="{{ r.onEditInline }}" title="Изменить" style="width:28px;height:28px;border:1px solid #e0e4e0;background:#fff;border-radius:7px;cursor:pointer;color:#5b635d;font-size:12px;">✎</button>
+                  <button onClick="{{ r.onDel }}" title="Удалить" style="width:28px;height:28px;border:1px solid #e0e4e0;background:#fff;border-radius:7px;cursor:pointer;color:#c0492f;font-size:12px;">✕</button>
+                </div>
               </div>
             </sc-for>
           </div>
@@ -264,9 +269,21 @@
             <span style="display:block;font-size:11px;font-weight:700;color:#8a928c;margin-bottom:5px;">Поиск по примечанию</span>
             <input value="{{ flt.q }}" onInput="{{ onFltQ }}" placeholder="Поиск…" style="width:100%;height:40px;padding:0 12px;border:1px solid #dde1dd;border-radius:9px;font-size:13px;font-weight:600;"/>
           </div>
+          <div style="display:flex;gap:8px;align-items:flex-end;">
+            <button onClick="{{ applyFilters }}" style="{{ applyBtnStyle }}">Применить</button>
+            <button onClick="{{ resetFilters }}" style="height:40px;padding:0 14px;border:1px solid #dde1dd;background:#fff;border-radius:9px;font-size:13px;font-weight:700;color:#5b635d;cursor:pointer;">Сбросить</button>
+          </div>
         </div>
+        <sc-if value="{{ recDirty }}" hint-placeholder-val="">
+          <div style="margin-top:10px;font-size:12px;font-weight:700;color:#a06a00;background:#fff7e6;border:1px solid #ffe2a8;border-radius:8px;padding:6px 12px;display:inline-block;">Параметры изменены — нажмите «Применить»</div>
+        </sc-if>
       </div>
-      <div style="background:#fff;border:1px solid #e9ece9;border-radius:16px;overflow:hidden;">
+      <div style="background:#fff;border:1px solid #e9ece9;border-radius:16px;overflow:hidden;position:relative;">
+        <sc-if value="{{ recLoading }}" hint-placeholder-val="">
+          <div style="position:absolute;inset:0;z-index:5;background:rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;">
+            <div style="width:38px;height:38px;border-radius:50%;border:4px solid #e3eafb;border-top-color:#2a5fd0;animation:spin .7s linear infinite;"></div>
+          </div>
+        </sc-if>
         <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid #eef0ee;background:#fbfcfb;">
           <div style="display:flex;align-items:center;gap:4px;">
             <span style="font-size:12px;font-weight:700;color:#8a928c;margin-right:6px;">Сортировка:</span>
@@ -518,8 +535,10 @@
                     <button onClick="{{ a.onDelete }}" style="width:30px;height:30px;border:1px solid #e0e4e0;background:#fff;border-radius:8px;cursor:pointer;color:#c0492f;">✕</button>
                   </div>
                 </div>
-                <div style="font-size:13px;color:#5b635d;font-weight:600;margin-bottom:6px;">{{ a.curLine }}</div>
-                <div style="font-size:20px;font-weight:800;letter-spacing:-.01em;">{{ a.totalTxt }}</div>
+                <div style="display:flex;flex-wrap:wrap;gap:4px 14px;margin-bottom:6px;">
+                  <sc-for list="{{ a.chips }}" as="ch" hint-placeholder-count="1"><div style="{{ ch.style }}">{{ ch.txt }}</div></sc-for>
+                </div>
+                <div style="{{ a.totalStyle }}">{{ a.totalTxt }}</div>
               </div>
             </sc-for>
           </div>
@@ -816,8 +835,8 @@ class Component extends DCLogic {
   state = {
     screen: 'home', loading: true, loadError: '', data: null,
     settingsOpen: false, conn: { url: '', key: '' }, connError: '',
-    qaTab: 'expense', qa: this.blankQa(), qaError: '',
-    flt: null, anYear: new Date().getFullYear(), anTab: 'cashflow', hideEmpty: true,
+    qaTab: 'expense', qa: this.blankQa(), qaError: '', qaEditId: null,
+    flt: null, fltDraft: null, recLoading: false, anYear: new Date().getFullYear(), anTab: 'cashflow', hideEmpty: true,
     modal: null, opEdit: null, opError: '', hoveredCol: null,
     anPieYear: new Date().getFullYear(), anPieMonth: new Date().getMonth(), anCat: null, anCatYear: new Date().getFullYear(),
     locked: false, pwHash: null, pwInput: '', pwError: '',
@@ -868,10 +887,17 @@ class Component extends DCLogic {
     this.DL = await import('./dataLayer.js');
     const cfg = this.DL.getConfig();
     if (cfg) this.setState({ conn: { url: cfg.url, key: cfg.key } });
-    this.setState({ flt: this.initFlt() });
+    const savedFlt = this.loadSavedFlt();
+    this.setState({ flt: savedFlt || this.initFlt(), fltDraft: savedFlt ? Object.assign({}, savedFlt) : this.initFlt() });
     await this.reload();
     this.loadPassword();
   }
+
+  loadSavedFlt() {
+    try { const raw = localStorage.getItem('hm_records_flt'); if (raw) { const f = JSON.parse(raw); if (f && f.from && f.to) return f; } } catch (e) {}
+    return null;
+  }
+  saveFlt(f) { try { localStorage.setItem('hm_records_flt', JSON.stringify(f)); } catch (e) {} }
 
   async loadPassword() {
     try {
@@ -979,17 +1005,22 @@ class Component extends DCLogic {
   }
   openAccountRecords(accId) {
     this._oar = this._oar || {};
-    if (!this._oar[accId]) this._oar[accId] = () => { const f = this.initFlt(); f.accountId = accId; this.setState({ screen: 'records', flt: f }); };
+    if (!this._oar[accId]) this._oar[accId] = () => { const f = this.initFlt(); f.accountId = accId; this.saveFlt(f); this.setState({ screen: 'records', flt: f, fltDraft: Object.assign({}, f) }); };
     return this._oar[accId];
   }
-  setFltType(t) { this._ft = this._ft || {}; if (!this._ft[t]) this._ft[t] = () => this.setNested('flt.type', t); return this._ft[t]; }
-  fltThisMonth = () => { const now = new Date(); const from = this.isoLocal(new Date(now.getFullYear(), now.getMonth(), 1)); const to = this.isoLocal(new Date(now.getFullYear(), now.getMonth() + 1, 0)); this.setState((p) => ({ flt: Object.assign({}, p.flt, { from, to }) })); };
-  fltThisYear = () => { const y = Number(this.state.flt.from.slice(0, 4)) || new Date().getFullYear(); this.setState((p) => ({ flt: Object.assign({}, p.flt, { from: y + '-01-01', to: y + '-12-31' }) })); };
+  setFltType(t) { this._ft = this._ft || {}; if (!this._ft[t]) this._ft[t] = () => this.setNested('fltDraft.type', t); return this._ft[t]; }
+  fltThisMonth = () => { const now = new Date(); const from = this.isoLocal(new Date(now.getFullYear(), now.getMonth(), 1)); const to = this.isoLocal(new Date(now.getFullYear(), now.getMonth() + 1, 0)); this.setState((p) => ({ fltDraft: Object.assign({}, p.fltDraft, { from, to }) })); };
+  fltThisYear = () => { const y = Number(this.state.fltDraft.from.slice(0, 4)) || new Date().getFullYear(); this.setState((p) => ({ fltDraft: Object.assign({}, p.fltDraft, { from: y + '-01-01', to: y + '-12-31' }) })); };
   setSort(by) {
     this._so = this._so || {};
-    if (!this._so[by]) this._so[by] = () => this.setState((p) => ({ flt: Object.assign({}, p.flt, by === p.flt.sortBy ? { sortDir: p.flt.sortDir === 'asc' ? 'desc' : 'asc' } : { sortBy: by, sortDir: 'desc' }) }));
+    if (!this._so[by]) this._so[by] = () => this.setState((p) => ({ fltDraft: Object.assign({}, p.fltDraft, by === p.fltDraft.sortBy ? { sortDir: p.fltDraft.sortDir === 'asc' ? 'desc' : 'asc' } : { sortBy: by, sortDir: 'desc' }) }));
     return this._so[by];
   }
+  applyFilters = () => {
+    this.setState({ recLoading: true });
+    setTimeout(() => this.setState((p) => { const f = Object.assign({}, p.fltDraft); this.saveFlt(f); return { flt: f, recLoading: false }; }), 350);
+  };
+  resetFilters = () => { const f = this.initFlt(); this.saveFlt(f); this.setState({ fltDraft: f, flt: Object.assign({}, f) }); };
 
   opToForm(op) {
     return { id: op.id, type: op.type, date: op.op_date, note: op.note || '',
@@ -1024,8 +1055,25 @@ class Component extends DCLogic {
   deleteOp(id) { return async () => { if (!confirm('Удалить операцию?')) return; await this.DL.deleteOperation(id); this.reload(); }; }
   closeModal = () => this.setState({ modal: null });
 
+  // Редактирование операции прямо в главной форме «Новая операция».
+  editRecent(op) {
+    return () => {
+      const qa = this.blankQa();
+      qa.date = op.op_date; qa.note = op.note || '';
+      if (op.type === 'transfer') {
+        qa.fromAccountId = op.from_account_id || ''; qa.fromCurrencyId = op.from_currency_id || ''; qa.fromAmount = op.from_amount != null ? String(op.from_amount) : '';
+        qa.toAccountId = op.to_account_id || ''; qa.toCurrencyId = op.to_currency_id || ''; qa.toAmount = op.to_amount != null ? String(op.to_amount) : '';
+      } else {
+        qa.accountId = op.account_id || ''; qa.currencyId = op.currency_id || ''; qa.amount = op.amount != null ? String(op.amount) : ''; qa.categoryId = op.category_id || '';
+      }
+      this.setState({ screen: 'home', qaTab: op.type, qa, qaEditId: op.id, qaError: '' });
+      try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) {}
+    };
+  }
+  cancelQaEdit = () => { this.setState({ qaEditId: null, qa: this.blankQa(), qaError: '' }, () => this.seedQaDefaults()); };
+
   submitQuick = async () => {
-    const { qaTab, qa } = this.state;
+    const { qaTab, qa, qaEditId } = this.state;
     let payload;
     try {
       if (qaTab === 'transfer') {
@@ -1033,13 +1081,16 @@ class Component extends DCLogic {
         if (!qa.fromAccountId || !qa.toAccountId) throw new Error('Выберите счета');
         if (fa <= 0 || ta <= 0) throw new Error('Введите суммы перевода');
         payload = { type: 'transfer', op_date: qa.date, note: qa.note, from_account_id: qa.fromAccountId, from_currency_id: qa.fromCurrencyId, from_amount: fa,
-          to_account_id: qa.toAccountId, to_currency_id: qa.toCurrencyId, to_amount: ta };
+          to_account_id: qa.toAccountId, to_currency_id: qa.toCurrencyId, to_amount: ta,
+          account_id: null, currency_id: null, amount: null, category_id: null };
       } else {
         const amt = this.parseAmt(qa.amount);
         if (!qa.accountId) throw new Error('Выберите счёт');
         if (amt <= 0) throw new Error('Введите сумму');
-        payload = { type: qaTab, op_date: qa.date, note: qa.note, account_id: qa.accountId, currency_id: qa.currencyId, amount: amt, category_id: qa.categoryId || null };
+        payload = { type: qaTab, op_date: qa.date, note: qa.note, account_id: qa.accountId, currency_id: qa.currencyId, amount: amt, category_id: qa.categoryId || null,
+          from_account_id: null, from_currency_id: null, from_amount: null, to_account_id: null, to_currency_id: null, to_amount: null };
       }
+      if (qaEditId) payload.id = qaEditId;
     } catch (e) { this.setState({ qaError: e.message || String(e) }); return; }
 
     this.setState({ submitting: true, qaError: '' });
@@ -1049,7 +1100,7 @@ class Component extends DCLogic {
       this.playCashSound();
       const keep = { accountId: qa.accountId, currencyId: qa.currencyId, categoryId: qa.categoryId, date: qa.date,
         fromAccountId: qa.fromAccountId, fromCurrencyId: qa.fromCurrencyId, toAccountId: qa.toAccountId, toCurrencyId: qa.toCurrencyId };
-      this.setState({ qa: Object.assign(this.blankQa(), keep), qaError: '', submitting: false });
+      this.setState({ qa: Object.assign(this.blankQa(), keep), qaError: '', submitting: false, qaEditId: null });
       this.reload();
     } catch (e) { this.setState({ qaError: e.message || String(e), submitting: false }); }
   };
@@ -1123,7 +1174,7 @@ class Component extends DCLogic {
     const qaTabs = qaTabsDef.map(([id, label]) => ({ label, onClick: this.setQaTab(id),
       style: 'flex:1;border:none;border-radius:8px;padding:8px 0;font-size:13px;font-weight:700;cursor:pointer;background:' + (this.state.qaTab === id ? '#fff' : 'transparent') + ';color:' + (this.state.qaTab === id ? '#2a5fd0' : '#7a827c') + ';box-shadow:' + (this.state.qaTab === id ? '0 1px 3px rgba(0,0,0,.08)' : 'none') + ';' }));
     const kind = this.state.qaTab === 'income' ? 'income' : 'expense';
-    const recentRows = d.operations.slice(0, 20).map((op) => this.opRow(op));
+    const recentRows = d.operations.slice(0, 20).map((op) => Object.assign(this.opRow(op), { onEditInline: this.editRecent(op), onDel: this.deleteOp(op.id) }));
     // виджет: расходы текущего месяца по категориям
     const ym = new Date().toISOString().slice(0, 7);
     const catMap = {};
@@ -1147,7 +1198,9 @@ class Component extends DCLogic {
       accountOptions: d.accounts.map((a) => ({ id: a.id, label: a.name })), qaTabs,
       qa: this.state.qa, qaError: this.state.qaError,
       qaSimple: this.state.qaTab !== 'transfer', qaTransfer: this.state.qaTab === 'transfer',
-      submitLabel: this.state.qaTab === 'transfer' ? 'Сделать перевод' : (this.state.qaTab === 'income' ? 'Добавить доход' : 'Добавить расход'),
+      qaEditing: !!this.state.qaEditId, cancelQaEdit: this.cancelQaEdit,
+      qaHeading: this.state.qaEditId ? 'Изменение операции' : 'Новая операция',
+      submitLabel: this.state.qaEditId ? 'Сохранить изменения' : (this.state.qaTab === 'transfer' ? 'Сделать перевод' : (this.state.qaTab === 'income' ? 'Добавить доход' : 'Добавить расход')),
       qaCurrencyOptions: this.currencyOptions(this.state.qa.accountId),
       qaFromCurrencyOptions: this.currencyOptions(this.state.qa.fromAccountId),
       qaToCurrencyOptions: this.currencyOptions(this.state.qa.toAccountId),
@@ -1164,8 +1217,9 @@ class Component extends DCLogic {
   homeAccount(a) {
     const d = this.state.data; const F = this.F;
     const bal = F.accountBalances(a, d.accountCurrencies, d.operations, d.currencies);
-    const balLines = bal.perCur.map((p) => ({ txt: F.formatMoney(p.balance, d.currencies.find((c) => c.id === p.currency_id)) }));
-    if (!balLines.length) balLines.push({ txt: '—' });
+    const balLines = bal.perCur.map((p) => ({ txt: F.formatMoney(p.balance, d.currencies.find((c) => c.id === p.currency_id)),
+      style: 'font-weight:800;font-size:13px;white-space:nowrap;color:' + (p.balance < 0 ? '#c0492f' : '#1a1f1c') + ';' }));
+    if (!balLines.length) balLines.push({ txt: '—', style: 'font-weight:800;font-size:13px;white-space:nowrap;color:#1a1f1c;' });
     return { id: a.id, name: a.name, initial: a.name.slice(0, 1).toUpperCase(), balLines, onOpen: this.openAccountRecords(a.id) };
   }
   currencyOptions(accountId) { return this.currenciesOf(accountId).map((c) => ({ id: c.id, label: c.code + ' ' + (c.symbol || '') })); }
@@ -1230,23 +1284,27 @@ class Component extends DCLogic {
 
   recordsVals() {
     if (!this.state.flt) return {};
-    const d = this.state.data; const F = this.F; const f = this.state.flt;
+    const d = this.state.data; const F = this.F; const f = this.state.flt; const fd = this.state.fltDraft || f;
     const ops = this.filteredOps();
     let totIn = 0, totExp = 0;
     ops.forEach((op) => { if (op.type === 'expense') totExp += F.opAmountBase(op, d.currencies); else if (op.type === 'income') totIn += F.opAmountBase(op, d.currencies); });
     const rows = ops.map((op) => this.opRow(op));
     const typeDef = [['all', 'Все'], ['expense', 'Расходы'], ['income', 'Доходы'], ['transfer', 'Переводы']];
     const typeTabs = typeDef.map(([id, label]) => ({ label, onClick: this.setFltType(id),
-      style: 'border:1px solid ' + (f.type === id ? '#2a5fd0' : '#dde1dd') + ';background:' + (f.type === id ? '#2a5fd0' : '#fff') + ';color:' + (f.type === id ? '#fff' : '#5b635d') + ';font-weight:700;font-size:13px;padding:8px 16px;border-radius:9px;cursor:pointer;' }));
+      style: 'border:1px solid ' + (fd.type === id ? '#2a5fd0' : '#dde1dd') + ';background:' + (fd.type === id ? '#2a5fd0' : '#fff') + ';color:' + (fd.type === id ? '#fff' : '#5b635d') + ';font-weight:700;font-size:13px;padding:8px 16px;border-radius:9px;cursor:pointer;' }));
     const sortDef = [['date', 'Дата'], ['amount', 'Сумма'], ['account', 'Счёт'], ['category', 'Категория']];
-    const sortBtns = sortDef.map(([id, label]) => ({ label: label + (f.sortBy === id ? (f.sortDir === 'asc' ? ' ↑' : ' ↓') : ''), onClick: this.setSort(id),
-      style: 'border:none;background:' + (f.sortBy === id ? '#e7eefc' : 'transparent') + ';color:' + (f.sortBy === id ? '#2a5fd0' : '#7a827c') + ';font-weight:700;font-size:12px;padding:6px 10px;border-radius:7px;cursor:pointer;' }));
+    const sortBtns = sortDef.map(([id, label]) => ({ label: label + (fd.sortBy === id ? (fd.sortDir === 'asc' ? ' ↑' : ' ↓') : ''), onClick: this.setSort(id),
+      style: 'border:none;background:' + (fd.sortBy === id ? '#e7eefc' : 'transparent') + ';color:' + (fd.sortBy === id ? '#2a5fd0' : '#7a827c') + ';font-weight:700;font-size:12px;padding:6px 10px;border-radius:7px;cursor:pointer;' }));
+    const dirty = JSON.stringify(f) !== JSON.stringify(fd);
     return {
       recRows: rows, recEmpty: rows.length === 0, recCount: rows.length + ' оп.',
       recTotalIn: F.formatBase(totIn, d.currencies), recTotalExp: F.formatBase(totExp, d.currencies), recNet: F.formatBase(totIn - totExp, d.currencies),
-      typeTabs, sortBtns, flt: f,
-      onFltFrom: this.field('flt.from'), onFltTo: this.field('flt.to'), onFltQ: this.field('flt.q'),
-      onFltAccount: this.field('flt.accountId'), onFltCategory: this.field('flt.categoryId'),
+      typeTabs, sortBtns, flt: fd,
+      recLoading: !!this.state.recLoading, recDirty: dirty,
+      applyFilters: this.applyFilters, resetFilters: this.resetFilters,
+      applyBtnStyle: 'height:40px;padding:0 22px;border:none;border-radius:9px;background:' + (dirty ? '#2a5fd0' : '#9bb4e8') + ';color:#fff;font-size:14px;font-weight:800;cursor:pointer;',
+      onFltFrom: this.field('fltDraft.from'), onFltTo: this.field('fltDraft.to'), onFltQ: this.field('fltDraft.q'),
+      onFltAccount: this.field('fltDraft.accountId'), onFltCategory: this.field('fltDraft.categoryId'),
       fltThisMonth: this.fltThisMonth, fltThisYear: this.fltThisYear,
       fltAccountOptions: [{ id: '', label: 'Все счета' }].concat(d.accounts.map((a) => ({ id: a.id, label: a.name }))),
       fltCategoryOptions: [{ id: '', label: 'Все категории' }].concat(this.categoryOptions('expense'), this.categoryOptions('income')),
@@ -1356,11 +1414,14 @@ class Component extends DCLogic {
   accCard(a) {
     const d = this.state.data; const F = this.F;
     const bal = F.accountBalances(a, d.accountCurrencies, d.operations, d.currencies);
-    const curLine = bal.perCur.map((p) => F.formatMoney(p.balance, d.currencies.find((c) => c.id === p.currency_id))).join('  ·  ');
+    const chips = bal.perCur.map((p) => ({ txt: F.formatMoney(p.balance, d.currencies.find((c) => c.id === p.currency_id)),
+      style: 'font-size:13px;font-weight:700;color:' + (p.balance < 0 ? '#c0492f' : '#3a423d') + ';' }));
+    if (!chips.length) chips.push({ txt: '—', style: 'font-size:13px;font-weight:700;color:#8a928c;' });
     const flags = [];
     if (!a.include_in_total) flags.push('не в балансе');
     if (!a.show_on_home) flags.push('скрыт с главной');
-    return { name: a.name, initial: a.name.slice(0, 1).toUpperCase(), curLine: curLine || '—', totalTxt: F.formatBase(bal.totalBase, d.currencies),
+    return { name: a.name, initial: a.name.slice(0, 1).toUpperCase(), chips, totalTxt: F.formatBase(bal.totalBase, d.currencies),
+      totalStyle: 'font-size:20px;font-weight:800;letter-spacing:-.01em;color:' + (bal.totalBase < 0 ? '#c0492f' : '#1a1f1c') + ';',
       flagsTxt: flags.join(' · '), hasFlags: flags.length > 0, onEdit: this.openAccount(a), onDelete: this.delAccount(a.id), onOpen: this.openAccountRecords(a.id) };
   }
 
