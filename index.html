@@ -1031,8 +1031,20 @@ class Component extends DCLogic {
     return this._qt[tab];
   }
   onQaAccountChange = (e) => { const id = e.target.value; this.setNested('qa.accountId', id); this.setNested('qa.currencyId', this.firstCurrencyOf(id)); };
-  onQaFromAccountChange = (e) => { const id = e.target.value; this.setNested('qa.fromAccountId', id); this.setNested('qa.fromCurrencyId', this.firstCurrencyOf(id)); };
-  onQaToAccountChange = (e) => { const id = e.target.value; this.setNested('qa.toAccountId', id); this.setNested('qa.toCurrencyId', this.firstCurrencyOf(id)); };
+  onQaFromAccountChange = (e) => { const id = e.target.value; this.setState((p) => ({ qa: this.mirrorTransfer(Object.assign({}, p.qa, { fromAccountId: id, fromCurrencyId: this.firstCurrencyOf(id) })) })); };
+  onQaToAccountChange = (e) => { const id = e.target.value; this.setState((p) => ({ qa: this.mirrorTransfer(Object.assign({}, p.qa, { toAccountId: id, toCurrencyId: this.firstCurrencyOf(id) })) })); };
+  // Автоперенос суммы: если валюта источника и получателя совпадают — сумма «куда» копируется из «откуда»
+  // (пока пользователь сам не менял поле «куда»).
+  mirrorTransfer(qa) {
+    if (qa.fromCurrencyId && qa.fromCurrencyId === qa.toCurrencyId && !qa.toAmountTouched) {
+      qa.toAmount = qa.fromAmount;
+    }
+    return qa;
+  }
+  onQaFromAmount = (e) => { const v = e.target.value; this.setState((p) => ({ qa: this.mirrorTransfer(Object.assign({}, p.qa, { fromAmount: v })) })); };
+  onQaFromCurrencyChange = (e) => { const v = e.target.value; this.setState((p) => ({ qa: this.mirrorTransfer(Object.assign({}, p.qa, { fromCurrencyId: v })) })); };
+  onQaToCurrencyChange = (e) => { const v = e.target.value; this.setState((p) => ({ qa: this.mirrorTransfer(Object.assign({}, p.qa, { toCurrencyId: v })) })); };
+  onQaToAmount = (e) => { const v = e.target.value; this.setNested('qa.toAmount', v); this.setNested('qa.toAmountTouched', true); };
   parseAmt(v) { return Number(String(v).replace(',', '.').replace(/[^0-9.\-]/g, '')) || 0; }
 
   initFlt() {
@@ -1099,7 +1111,7 @@ class Component extends DCLogic {
       qa.date = op.op_date; qa.note = op.note || '';
       if (op.type === 'transfer') {
         qa.fromAccountId = op.from_account_id || ''; qa.fromCurrencyId = op.from_currency_id || ''; qa.fromAmount = op.from_amount != null ? String(op.from_amount) : '';
-        qa.toAccountId = op.to_account_id || ''; qa.toCurrencyId = op.to_currency_id || ''; qa.toAmount = op.to_amount != null ? String(op.to_amount) : '';
+        qa.toAccountId = op.to_account_id || ''; qa.toCurrencyId = op.to_currency_id || ''; qa.toAmount = op.to_amount != null ? String(op.to_amount) : ''; qa.toAmountTouched = true;
       } else {
         qa.accountId = op.account_id || ''; qa.currencyId = op.currency_id || ''; qa.amount = op.amount != null ? String(op.amount) : ''; qa.categoryId = op.category_id || '';
       }
@@ -1245,8 +1257,8 @@ class Component extends DCLogic {
       onQaAccount: this.onQaAccountChange, onQaCurrency: this.field('qa.currencyId'),
       onQaAmount: this.field('qa.amount'), onQaCategory: this.field('qa.categoryId'),
       onQaDate: this.field('qa.date'), onQaNote: this.field('qa.note'),
-      onQaFromAccount: this.onQaFromAccountChange, onQaFromCurrency: this.field('qa.fromCurrencyId'), onQaFromAmount: this.field('qa.fromAmount'),
-      onQaToAccount: this.onQaToAccountChange, onQaToCurrency: this.field('qa.toCurrencyId'), onQaToAmount: this.field('qa.toAmount'),
+      onQaFromAccount: this.onQaFromAccountChange, onQaFromCurrency: this.onQaFromCurrencyChange, onQaFromAmount: this.onQaFromAmount,
+      onQaToAccount: this.onQaToAccountChange, onQaToCurrency: this.onQaToCurrencyChange, onQaToAmount: this.onQaToAmount,
       submitQuick: this.submitQuick,
     };
   }
