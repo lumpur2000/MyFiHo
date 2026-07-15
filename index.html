@@ -25,6 +25,8 @@
   .acc-card{transition:box-shadow .12s,transform .12s;}
   .acc-card:hover{box-shadow:0 8px 24px -12px rgba(42,95,208,.35);transform:translateY(-1px);}
   @keyframes spin{to{transform:rotate(360deg);}}
+  .ph-warn{background:#fff8db !important;border-color:#e9c94b !important;}
+  .ph-chg{background:#e7effe !important;border-color:#2a5fd0 !important;}
   @keyframes popIn{0%{transform:scale(.85);opacity:0;}100%{transform:scale(1);opacity:1;}}
 </style>
 </helmet>
@@ -89,6 +91,18 @@
     <!-- ГЛАВНАЯ -->
     <sc-if value="{{ showHome }}" hint-placeholder-val="{{ true }}">
     <div data-screen-label="Главная">
+      <div style="margin-bottom:22px;background:linear-gradient(180deg,#eef4ff,#e7eefc);border:1px solid #cfdcfa;border-radius:16px;padding:16px 18px;box-shadow:0 12px 34px -22px rgba(42,95,208,.55);">
+        <div style="display:flex;gap:12px;align-items:stretch;">
+          <textarea value="{{ pText }}" onInput="{{ onPText }}" onKeyDown="{{ onPKey }}" placeholder="" style="flex:1;min-width:0;min-height:74px;padding:13px 15px;border:1px solid #c9d6ef;border-radius:12px;background:#fff;font-size:16px;font-weight:600;line-height:1.5;resize:vertical;"></textarea>
+          <div style="display:flex;flex-direction:column;gap:9px;width:168px;flex:none;">
+            <button onClick="{{ doPParse }}" disabled="{{ pDisabled }}" style="{{ pParseBtnStyle }}">Разобрать</button>
+            <button onClick="{{ submitQuick }}" style="{{ pSubmitBtnStyle }}">Провести</button>
+          </div>
+        </div>
+        <sc-if value="{{ pBusy }}" hint-placeholder-val=""><div style="display:flex;align-items:center;gap:9px;margin-top:11px;color:#2a5fd0;font-weight:700;font-size:13px;"><div style="width:16px;height:16px;border-radius:50%;border:2px solid #cfe0fb;border-top-color:#2a5fd0;animation:spin .7s linear infinite;"></div>Разбираю фразу…</div></sc-if>
+        <sc-if value="{{ pNotes }}" hint-placeholder-val=""><div style="margin-top:10px;font-size:13px;color:#4a5578;font-weight:600;line-height:1.45;">{{ pNotes }}</div></sc-if>
+        <sc-if value="{{ pErr }}" hint-placeholder-val=""><div style="margin-top:10px;font-size:13px;color:#c0492f;font-weight:700;line-height:1.45;">{{ pErr }}</div></sc-if>
+      </div>
       <div style="display:grid;grid-template-columns:1fr minmax(340px,380px) 1fr;gap:22px;align-items:start;">
 
         <!-- ЛЕВО: баланс + счета -->
@@ -132,19 +146,19 @@
             <sc-if value="{{ qaSimple }}" hint-placeholder-val="{{ true }}">
             <div style="display:flex;flex-direction:column;gap:9px;">
               <label style="display:block;"><span style="display:block;font-size:11px;font-weight:700;color:#5b635d;margin-bottom:3px;">Счёт</span>
-                <select value="{{ qa.accountId }}" onChange="{{ onQaAccount }}" style="width:100%;height:38px;padding:0 11px;border:1px solid #c9d6ef;border-radius:9px;background:#fff;font-size:14px;font-weight:600;">
+                <select value="{{ qa.accountId }}" onChange="{{ onQaAccount }}" class="{{ clsAccount }}" style="width:100%;height:38px;padding:0 11px;border:1px solid #c9d6ef;border-radius:9px;background:#fff;font-size:14px;font-weight:600;">
                   <sc-for list="{{ accountOptions }}" as="o" hint-placeholder-count="3"><option value="{{ o.id }}">{{ o.label }}</option></sc-for>
                 </select></label>
               <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:8px;">
                 <label style="display:block;"><span style="display:block;font-size:11px;font-weight:700;color:#5b635d;margin-bottom:3px;">Сумма</span>
-                  <input value="{{ qa.amount }}" onInput="{{ onQaAmount }}" inputmode="decimal" placeholder="0,00" style="width:100%;height:38px;padding:0 11px;border:1px solid #c9d6ef;border-radius:9px;font-size:15px;font-weight:700;"/></label>
+                  <input value="{{ qa.amount }}" onInput="{{ onQaAmount }}" class="{{ clsAmount }}" inputmode="decimal" placeholder="0,00" style="width:100%;height:38px;padding:0 11px;border:1px solid #c9d6ef;border-radius:9px;font-size:15px;font-weight:700;"/></label>
                 <label style="display:block;"><span style="display:block;font-size:11px;font-weight:700;color:#5b635d;margin-bottom:3px;">Валюта</span>
-                  <select value="{{ qa.currencyId }}" onChange="{{ onQaCurrency }}" style="width:100%;height:38px;padding:0 9px;border:1px solid #c9d6ef;border-radius:9px;background:#fff;font-size:14px;font-weight:600;">
+                  <select value="{{ qa.currencyId }}" onChange="{{ onQaCurrency }}" class="{{ clsCurrency }}" style="width:100%;height:38px;padding:0 9px;border:1px solid #c9d6ef;border-radius:9px;background:#fff;font-size:14px;font-weight:600;">
                     <sc-for list="{{ qaCurrencyOptions }}" as="o" hint-placeholder-count="2"><option value="{{ o.id }}">{{ o.label }}</option></sc-for>
                   </select></label>
               </div>
               <label style="display:block;"><span style="display:block;font-size:11px;font-weight:700;color:#5b635d;margin-bottom:3px;">Категория</span>
-                <select value="{{ qa.categoryId }}" onChange="{{ onQaCategory }}" style="width:100%;height:38px;padding:0 11px;border:1px solid #c9d6ef;border-radius:9px;background:#fff;font-size:14px;font-weight:600;">
+                <select value="{{ qa.categoryId }}" onChange="{{ onQaCategory }}" class="{{ clsCategory }}" style="width:100%;height:38px;padding:0 11px;border:1px solid #c9d6ef;border-radius:9px;background:#fff;font-size:14px;font-weight:600;">
                   <sc-for list="{{ qaCategoryOptions }}" as="o" hint-placeholder-count="4"><option value="{{ o.id }}">{{ o.label }}</option></sc-for>
                 </select></label>
             </div>
@@ -153,24 +167,24 @@
             <div style="display:flex;flex-direction:column;gap:9px;">
               <div style="background:#faf8f3;border:1px solid #efe7d6;border-radius:10px;padding:10px;">
                 <div style="font-size:11px;font-weight:800;color:#a06a00;text-transform:uppercase;margin-bottom:7px;">Откуда</div>
-                <select value="{{ qa.fromAccountId }}" onChange="{{ onQaFromAccount }}" style="width:100%;height:36px;padding:0 11px;border:1px solid #dde1dd;border-radius:8px;background:#fff;font-size:14px;font-weight:600;margin-bottom:8px;">
+                <select value="{{ qa.fromAccountId }}" onChange="{{ onQaFromAccount }}" class="{{ clsFromAccount }}" style="width:100%;height:36px;padding:0 11px;border:1px solid #dde1dd;border-radius:8px;background:#fff;font-size:14px;font-weight:600;margin-bottom:8px;">
                   <sc-for list="{{ accountOptions }}" as="o" hint-placeholder-count="3"><option value="{{ o.id }}">{{ o.label }}</option></sc-for>
                 </select>
                 <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:8px;">
-                  <input value="{{ qa.fromAmount }}" onInput="{{ onQaFromAmount }}" inputmode="decimal" placeholder="Сумма" style="height:36px;padding:0 11px;border:1px solid #dde1dd;border-radius:8px;font-size:14px;font-weight:700;"/>
-                  <select value="{{ qa.fromCurrencyId }}" onChange="{{ onQaFromCurrency }}" style="height:36px;padding:0 9px;border:1px solid #dde1dd;border-radius:8px;background:#fff;font-size:14px;font-weight:600;">
+                  <input value="{{ qa.fromAmount }}" onInput="{{ onQaFromAmount }}" class="{{ clsFromAmount }}" inputmode="decimal" placeholder="Сумма" style="height:36px;padding:0 11px;border:1px solid #dde1dd;border-radius:8px;font-size:14px;font-weight:700;"/>
+                  <select value="{{ qa.fromCurrencyId }}" onChange="{{ onQaFromCurrency }}" class="{{ clsFromCurrency }}" style="height:36px;padding:0 9px;border:1px solid #dde1dd;border-radius:8px;background:#fff;font-size:14px;font-weight:600;">
                     <sc-for list="{{ qaFromCurrencyOptions }}" as="o" hint-placeholder-count="2"><option value="{{ o.id }}">{{ o.label }}</option></sc-for>
                   </select>
                 </div>
               </div>
               <div style="background:#e9f0fd;border:1px solid #cdddf7;border-radius:10px;padding:10px;">
                 <div style="font-size:11px;font-weight:800;color:#2a5fd0;text-transform:uppercase;margin-bottom:7px;">Куда</div>
-                <select value="{{ qa.toAccountId }}" onChange="{{ onQaToAccount }}" style="width:100%;height:36px;padding:0 11px;border:1px solid #dde1dd;border-radius:8px;background:#fff;font-size:14px;font-weight:600;margin-bottom:8px;">
+                <select value="{{ qa.toAccountId }}" onChange="{{ onQaToAccount }}" class="{{ clsToAccount }}" style="width:100%;height:36px;padding:0 11px;border:1px solid #dde1dd;border-radius:8px;background:#fff;font-size:14px;font-weight:600;margin-bottom:8px;">
                   <sc-for list="{{ accountOptions }}" as="o" hint-placeholder-count="3"><option value="{{ o.id }}">{{ o.label }}</option></sc-for>
                 </select>
                 <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:8px;">
-                  <input value="{{ qa.toAmount }}" onInput="{{ onQaToAmount }}" inputmode="decimal" placeholder="Сумма" style="height:36px;padding:0 11px;border:1px solid #dde1dd;border-radius:8px;font-size:14px;font-weight:700;"/>
-                  <select value="{{ qa.toCurrencyId }}" onChange="{{ onQaToCurrency }}" style="height:36px;padding:0 9px;border:1px solid #dde1dd;border-radius:8px;background:#fff;font-size:14px;font-weight:600;">
+                  <input value="{{ qa.toAmount }}" onInput="{{ onQaToAmount }}" class="{{ clsToAmount }}" inputmode="decimal" placeholder="Сумма" style="height:36px;padding:0 11px;border:1px solid #dde1dd;border-radius:8px;font-size:14px;font-weight:700;"/>
+                  <select value="{{ qa.toCurrencyId }}" onChange="{{ onQaToCurrency }}" class="{{ clsToCurrency }}" style="height:36px;padding:0 9px;border:1px solid #dde1dd;border-radius:8px;background:#fff;font-size:14px;font-weight:600;">
                     <sc-for list="{{ qaToCurrencyOptions }}" as="o" hint-placeholder-count="2"><option value="{{ o.id }}">{{ o.label }}</option></sc-for>
                   </select>
                 </div>
@@ -179,7 +193,7 @@
             </sc-if>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
               <label style="display:block;"><span style="display:block;font-size:11px;font-weight:700;color:#5b635d;margin-bottom:3px;">Дата</span>
-                <input type="date" value="{{ qa.date }}" onChange="{{ onQaDate }}" style="width:100%;height:38px;padding:0 11px;border:1px solid #c9d6ef;border-radius:9px;font-size:14px;font-weight:600;"/></label>
+                <input type="date" value="{{ qa.date }}" onChange="{{ onQaDate }}" class="{{ clsDate }}" style="width:100%;height:38px;padding:0 11px;border:1px solid #c9d6ef;border-radius:9px;font-size:14px;font-weight:600;"/></label>
               <label style="display:block;"><span style="display:block;font-size:11px;font-weight:700;color:#5b635d;margin-bottom:3px;">Примечание</span>
                 <input value="{{ qa.note }}" onInput="{{ onQaNote }}" placeholder="—" style="width:100%;height:38px;padding:0 11px;border:1px solid #c9d6ef;border-radius:9px;font-size:14px;font-weight:600;"/></label>
             </div>
@@ -192,16 +206,16 @@
         <!-- ПРАВО: последние операции -->
         <div>
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <h2 style="margin:0;font-size:16px;font-weight:800;">Последние операции</h2>
+            <h2 style="margin:0;font-size:16px;font-weight:800;">Недавно внесённые</h2>
             <button onClick="{{ navRecords }}" style="border:none;background:none;color:#2a5fd0;font-weight:700;font-size:13px;cursor:pointer;">Все →</button>
           </div>
           <div style="background:#fff;border:1px solid #e9ece9;border-radius:16px;overflow:hidden;">
             <sc-if value="{{ recentEmpty }}" hint-placeholder-val=""><div style="padding:40px;text-align:center;color:#a3aaa5;font-weight:600;">Пока нет операций</div></sc-if>
             <sc-for list="{{ recentRows }}" as="r" hint-placeholder-count="6">
               <div style="display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid #f3f5f3;">
-                <div style="width:64px;flex:none;font-size:12px;font-weight:600;color:#8a928c;">{{ r.dateTxt }}</div>
-                <div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13px;">{{ r.title }}</div><div style="font-size:11px;color:#8a928c;font-weight:500;">{{ r.sub }}</div></div>
-                <div style="text-align:right;flex:none;"><div style="{{ r.amountStyle }}">{{ r.amountTxt }}</div><div style="font-size:11px;color:#a3aaa5;font-weight:600;">{{ r.baseTxt }}</div></div>
+                <div style="width:56px;flex:none;line-height:1.25;"><div style="font-size:12px;font-weight:700;color:#5b635d;">{{ r.dateShort }}</div><div style="font-size:11px;font-weight:600;color:#a3aaa5;">{{ r.dateYear }}</div></div>
+                <div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.title }}</div><div style="font-size:11px;color:#8a928c;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.sub }}</div></div>
+                <div style="text-align:right;flex:none;white-space:nowrap;"><div style="{{ r.amountStyle }}">{{ r.amountTxt }}</div><sc-if value="{{ r.amountTxt2 }}" hint-placeholder-val=""><div style="{{ r.amountStyle2 }}">{{ r.amountTxt2 }}</div></sc-if><div style="font-size:11px;color:#a3aaa5;font-weight:600;">{{ r.baseTxt }}</div></div>
                 <div style="display:flex;gap:5px;flex:none;">
                   <button onClick="{{ r.onEditInline }}" title="Изменить" style="width:28px;height:28px;border:1px solid #e0e4e0;background:#fff;border-radius:7px;cursor:pointer;color:#5b635d;font-size:12px;">✎</button>
                   <button onClick="{{ r.onDel }}" title="Удалить" style="width:28px;height:28px;border:1px solid #e0e4e0;background:#fff;border-radius:7px;cursor:pointer;color:#c0492f;font-size:12px;">✕</button>
@@ -658,6 +672,16 @@
         </div>
         <sc-if value="{{ isDemo }}" hint-placeholder-val="{{ true }}"><button onClick="{{ doResetDemo }}" style="margin-top:16px;width:100%;height:40px;border:1px dashed #dde1dd;border-radius:11px;background:#fafbfa;color:#8a928c;font-size:13px;font-weight:700;cursor:pointer;">Сбросить демо-данные</button></sc-if>
 
+        <sc-if value="{{ isDemo }}" hint-placeholder-val="{{ true }}">
+        <div style="margin-top:22px;padding:16px;border:1px solid #cfdcfa;background:#f2f6ff;border-radius:12px;">
+          <h3 style="margin:0 0 4px;font-size:14px;font-weight:800;color:#1f3a78;">Ключ для разбора фразы</h3>
+          <p style="font-size:12px;color:#5b6b8a;font-weight:600;line-height:1.5;margin:0 0 12px;">Только для отладки разбора в демо-режиме. Ключ используется исключительно для вызова функции parse-expense — данные остаются в браузере, реальная база не читается и не меняется.</p>
+          <textarea value="{{ parseKey }}" onInput="{{ onParseKey }}" placeholder="eyJhbGciOi..." style="width:100%;height:76px;padding:10px 13px;border:1px solid #c9d6ef;border-radius:11px;font-size:12px;font-weight:600;resize:vertical;font-family:ui-monospace,monospace;background:#fff;"></textarea>
+          <sc-if value="{{ parseKeyMsg }}" hint-placeholder-val=""><div style="font-size:12px;color:#2a5fd0;font-weight:700;margin-top:8px;">{{ parseKeyMsg }}</div></sc-if>
+          <button onClick="{{ saveParseKey }}" style="margin-top:10px;width:100%;height:40px;border:none;border-radius:10px;background:#2a5fd0;color:#fff;font-size:13px;font-weight:800;cursor:pointer;">Сохранить ключ разбора</button>
+        </div>
+        </sc-if>
+
         <div style="margin-top:26px;padding-top:22px;border-top:1px solid #eef0ee;">
           <h3 style="margin:0 0 4px;font-size:16px;font-weight:800;">{{ pwSectionTitle }}</h3>
           <p style="font-size:12px;color:#8a928c;font-weight:600;line-height:1.5;margin:0 0 16px;">Пароль запрашивается при входе. Это мягкая защита для личного использования — данные всё равно доступны напрямую через Supabase, поэтому не публикуйте anon-ключ.</p>
@@ -689,22 +713,31 @@
           <button onClick="{{ closeModal }}" style="border:none;background:#f1f3f1;width:32px;height:32px;border-radius:9px;cursor:pointer;font-size:17px;color:#5b635d;">✕</button>
         </div>
         <div style="display:flex;flex-direction:column;gap:13px;">
+          <div style="margin-bottom:2px;">
+            <div style="display:flex;gap:7px;">
+              <input value="{{ opPText }}" onInput="{{ onOpPText }}" onKeyDown="{{ onOpPKey }}" placeholder="Опишите операцию словами…" style="flex:1;min-width:0;height:40px;padding:0 12px;border:1px solid #dde1dd;border-radius:10px;background:#fff;font-size:14px;font-weight:600;"/>
+              <button onClick="{{ doOpPParse }}" disabled="{{ opPDisabled }}" style="{{ opPBtnStyle }}">Разобрать</button>
+            </div>
+            <sc-if value="{{ opPBusy }}" hint-placeholder-val=""><div style="display:flex;align-items:center;gap:8px;margin-top:8px;color:#2a5fd0;font-weight:700;font-size:12px;"><div style="width:15px;height:15px;border-radius:50%;border:2px solid #cfe0fb;border-top-color:#2a5fd0;animation:spin .7s linear infinite;"></div>Разбираю…</div></sc-if>
+            <sc-if value="{{ opPNotes }}" hint-placeholder-val=""><div style="margin-top:7px;font-size:12px;color:#5b635d;font-weight:600;line-height:1.4;">{{ opPNotes }}</div></sc-if>
+            <sc-if value="{{ opPErr }}" hint-placeholder-val=""><div style="margin-top:7px;font-size:12px;color:#c0492f;font-weight:700;line-height:1.4;">{{ opPErr }}</div></sc-if>
+          </div>
           <sc-if value="{{ efIsSimple }}" hint-placeholder-val="{{ true }}">
           <div style="display:flex;flex-direction:column;gap:13px;">
             <label><span style="display:block;font-size:12px;font-weight:700;color:#5b635d;margin-bottom:5px;">Счёт</span>
-              <select value="{{ ef.accountId }}" onChange="{{ onEfAccount }}" style="width:100%;height:42px;padding:0 12px;border:1px solid #dde1dd;border-radius:10px;background:#fff;font-size:14px;font-weight:600;">
+              <select value="{{ ef.accountId }}" onChange="{{ onEfAccount }}" class="{{ efClsAccount }}" style="width:100%;height:42px;padding:0 12px;border:1px solid #dde1dd;border-radius:10px;background:#fff;font-size:14px;font-weight:600;">
                 <sc-for list="{{ efAccountOptions }}" as="o" hint-placeholder-count="3"><option value="{{ o.id }}">{{ o.label }}</option></sc-for>
               </select></label>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
               <label><span style="display:block;font-size:12px;font-weight:700;color:#5b635d;margin-bottom:5px;">Сумма</span>
-                <input value="{{ ef.amount }}" onInput="{{ onEfAmount }}" inputmode="decimal" style="width:100%;height:42px;padding:0 12px;border:1px solid #dde1dd;border-radius:10px;font-size:15px;font-weight:700;"/></label>
+                <input value="{{ ef.amount }}" onInput="{{ onEfAmount }}" class="{{ efClsAmount }}" inputmode="decimal" style="width:100%;height:42px;padding:0 12px;border:1px solid #dde1dd;border-radius:10px;font-size:15px;font-weight:700;"/></label>
               <label><span style="display:block;font-size:12px;font-weight:700;color:#5b635d;margin-bottom:5px;">Валюта</span>
-                <select value="{{ ef.currencyId }}" onChange="{{ onEfCurrency }}" style="width:100%;height:42px;padding:0 12px;border:1px solid #dde1dd;border-radius:10px;background:#fff;font-size:14px;font-weight:600;">
+                <select value="{{ ef.currencyId }}" onChange="{{ onEfCurrency }}" class="{{ efClsCurrency }}" style="width:100%;height:42px;padding:0 12px;border:1px solid #dde1dd;border-radius:10px;background:#fff;font-size:14px;font-weight:600;">
                   <sc-for list="{{ efCurrencyOptions }}" as="o" hint-placeholder-count="2"><option value="{{ o.id }}">{{ o.label }}</option></sc-for>
                 </select></label>
             </div>
             <label><span style="display:block;font-size:12px;font-weight:700;color:#5b635d;margin-bottom:5px;">Категория</span>
-              <select value="{{ ef.categoryId }}" onChange="{{ onEfCategory }}" style="width:100%;height:42px;padding:0 12px;border:1px solid #dde1dd;border-radius:10px;background:#fff;font-size:14px;font-weight:600;">
+              <select value="{{ ef.categoryId }}" onChange="{{ onEfCategory }}" class="{{ efClsCategory }}" style="width:100%;height:42px;padding:0 12px;border:1px solid #dde1dd;border-radius:10px;background:#fff;font-size:14px;font-weight:600;">
                 <sc-for list="{{ efCategoryOptions }}" as="o" hint-placeholder-count="4"><option value="{{ o.id }}">{{ o.label }}</option></sc-for>
               </select></label>
           </div>
@@ -713,24 +746,24 @@
           <div style="display:flex;flex-direction:column;gap:13px;">
             <div style="background:#faf8f3;border:1px solid #efe7d6;border-radius:12px;padding:12px;">
               <div style="font-size:11px;font-weight:800;color:#a06a00;text-transform:uppercase;margin-bottom:9px;">Откуда</div>
-              <select value="{{ ef.fromAccountId }}" onChange="{{ onEfFromAccount }}" style="width:100%;height:40px;padding:0 12px;border:1px solid #dde1dd;border-radius:9px;background:#fff;font-size:14px;font-weight:600;margin-bottom:9px;">
+              <select value="{{ ef.fromAccountId }}" onChange="{{ onEfFromAccount }}" class="{{ efClsFromAccount }}" style="width:100%;height:40px;padding:0 12px;border:1px solid #dde1dd;border-radius:9px;background:#fff;font-size:14px;font-weight:600;margin-bottom:9px;">
                 <sc-for list="{{ efAccountOptions }}" as="o" hint-placeholder-count="3"><option value="{{ o.id }}">{{ o.label }}</option></sc-for>
               </select>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;">
-                <input value="{{ ef.fromAmount }}" onInput="{{ onEfFromAmount }}" inputmode="decimal" style="height:40px;padding:0 12px;border:1px solid #dde1dd;border-radius:9px;font-size:14px;font-weight:700;"/>
-                <select value="{{ ef.fromCurrencyId }}" onChange="{{ onEfFromCurrency }}" style="height:40px;padding:0 10px;border:1px solid #dde1dd;border-radius:9px;background:#fff;font-size:14px;font-weight:600;">
+                <input value="{{ ef.fromAmount }}" onInput="{{ onEfFromAmount }}" class="{{ efClsFromAmount }}" inputmode="decimal" style="height:40px;padding:0 12px;border:1px solid #dde1dd;border-radius:9px;font-size:14px;font-weight:700;"/>
+                <select value="{{ ef.fromCurrencyId }}" onChange="{{ onEfFromCurrency }}" class="{{ efClsFromCurrency }}" style="height:40px;padding:0 10px;border:1px solid #dde1dd;border-radius:9px;background:#fff;font-size:14px;font-weight:600;">
                   <sc-for list="{{ efFromCurrencyOptions }}" as="o" hint-placeholder-count="2"><option value="{{ o.id }}">{{ o.label }}</option></sc-for>
                 </select>
               </div>
             </div>
             <div style="background:#e9f0fd;border:1px solid #cdddf7;border-radius:12px;padding:12px;">
               <div style="font-size:11px;font-weight:800;color:#2a5fd0;text-transform:uppercase;margin-bottom:9px;">Куда</div>
-              <select value="{{ ef.toAccountId }}" onChange="{{ onEfToAccount }}" style="width:100%;height:40px;padding:0 12px;border:1px solid #dde1dd;border-radius:9px;background:#fff;font-size:14px;font-weight:600;margin-bottom:9px;">
+              <select value="{{ ef.toAccountId }}" onChange="{{ onEfToAccount }}" class="{{ efClsToAccount }}" style="width:100%;height:40px;padding:0 12px;border:1px solid #dde1dd;border-radius:9px;background:#fff;font-size:14px;font-weight:600;margin-bottom:9px;">
                 <sc-for list="{{ efAccountOptions }}" as="o" hint-placeholder-count="3"><option value="{{ o.id }}">{{ o.label }}</option></sc-for>
               </select>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;">
-                <input value="{{ ef.toAmount }}" onInput="{{ onEfToAmount }}" inputmode="decimal" style="height:40px;padding:0 12px;border:1px solid #dde1dd;border-radius:9px;font-size:14px;font-weight:700;"/>
-                <select value="{{ ef.toCurrencyId }}" onChange="{{ onEfToCurrency }}" style="height:40px;padding:0 10px;border:1px solid #dde1dd;border-radius:9px;background:#fff;font-size:14px;font-weight:600;">
+                <input value="{{ ef.toAmount }}" onInput="{{ onEfToAmount }}" class="{{ efClsToAmount }}" inputmode="decimal" style="height:40px;padding:0 12px;border:1px solid #dde1dd;border-radius:9px;font-size:14px;font-weight:700;"/>
+                <select value="{{ ef.toCurrencyId }}" onChange="{{ onEfToCurrency }}" class="{{ efClsToCurrency }}" style="height:40px;padding:0 10px;border:1px solid #dde1dd;border-radius:9px;background:#fff;font-size:14px;font-weight:600;">
                   <sc-for list="{{ efToCurrencyOptions }}" as="o" hint-placeholder-count="2"><option value="{{ o.id }}">{{ o.label }}</option></sc-for>
                 </select>
               </div>
@@ -739,7 +772,7 @@
           </sc-if>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
             <label><span style="display:block;font-size:12px;font-weight:700;color:#5b635d;margin-bottom:5px;">Дата</span>
-              <input type="date" value="{{ ef.date }}" onChange="{{ onEfDate }}" style="width:100%;height:42px;padding:0 12px;border:1px solid #dde1dd;border-radius:10px;font-size:14px;font-weight:600;"/></label>
+              <input type="date" value="{{ ef.date }}" onChange="{{ onEfDate }}" class="{{ efClsDate }}" style="width:100%;height:42px;padding:0 12px;border:1px solid #dde1dd;border-radius:10px;font-size:14px;font-weight:600;"/></label>
             <label><span style="display:block;font-size:12px;font-weight:700;color:#5b635d;margin-bottom:5px;">Примечание</span>
               <input value="{{ ef.note }}" onInput="{{ onEfNote }}" style="width:100%;height:42px;padding:0 12px;border:1px solid #dde1dd;border-radius:10px;font-size:14px;font-weight:600;"/></label>
           </div>
@@ -842,8 +875,10 @@
 class Component extends DCLogic {
   state = {
     screen: 'home', loading: true, loadError: '', data: null,
-    settingsOpen: false, conn: { url: '', key: '' }, connError: '',
+    settingsOpen: false, conn: { url: '', key: '' }, connError: '', parseKey: '', parseKeyMsg: '',
     qaTab: 'expense', qa: this.blankQa(), qaError: '', qaEditId: null,
+    pText: '', pBusy: false, pErr: '', pNotes: '', pConf: [], pChg: [], pParsed: false,
+    opPText: '', opPBusy: false, opPErr: '', opPNotes: '', opPConf: [], opPChg: [],
     flt: null, fltDraft: null, recLoading: false, anYear: new Date().getFullYear(), anTab: 'cashflow', hideEmpty: true,
     modal: null, opEdit: null, opError: '', hoveredCol: null,
     anPieYear: new Date().getFullYear(), anPieMonth: new Date().getMonth(), anCat: null, anCatYear: new Date().getFullYear(),
@@ -896,6 +931,7 @@ class Component extends DCLogic {
     this.DL = await import('./dataLayer.js');
     const cfg = this.DL.getConfig();
     if (cfg) this.setState({ conn: { url: cfg.url, key: cfg.key } });
+    this.setState({ parseKey: this.DL.getParseKey() });
     const savedFlt = this.loadSavedFlt();
     this.setState({ flt: savedFlt || this.initFlt(), fltDraft: savedFlt ? Object.assign({}, savedFlt) : this.initFlt() });
     await this.reload();
@@ -1007,6 +1043,8 @@ class Component extends DCLogic {
       let o = root;
       for (let i = 0; i < keys.length - 1; i++) { o[keys[i]] = Object.assign({}, o[keys[i]]); o = o[keys[i]]; }
       o[keys[keys.length - 1]] = value;
+      if (path.indexOf('qa.') === 0) { const k = path.slice(3); root.pConf = (prev.pConf || []).filter((x) => x !== k); root.pChg = (prev.pChg || []).filter((x) => x !== k); }
+      else if (path.indexOf('opEdit.') === 0) { const k = path.slice(7); root.opPConf = (prev.opPConf || []).filter((x) => x !== k); root.opPChg = (prev.opPChg || []).filter((x) => x !== k); }
       return root;
     });
   }
@@ -1031,8 +1069,8 @@ class Component extends DCLogic {
     return this._qt[tab];
   }
   onQaAccountChange = (e) => { const id = e.target.value; this.setNested('qa.accountId', id); this.setNested('qa.currencyId', this.firstCurrencyOf(id)); };
-  onQaFromAccountChange = (e) => { const id = e.target.value; this.setState((p) => ({ qa: this.mirrorTransfer(Object.assign({}, p.qa, { fromAccountId: id, fromCurrencyId: this.firstCurrencyOf(id) })) })); };
-  onQaToAccountChange = (e) => { const id = e.target.value; this.setState((p) => ({ qa: this.mirrorTransfer(Object.assign({}, p.qa, { toAccountId: id, toCurrencyId: this.firstCurrencyOf(id) })) })); };
+  onQaFromAccountChange = (e) => { const id = e.target.value; this.setState((p) => Object.assign({ qa: this.mirrorTransfer(Object.assign({}, p.qa, { fromAccountId: id, fromCurrencyId: this.firstCurrencyOf(id) })) }, this.phClear(p, ['fromAccountId', 'fromCurrencyId']))); };
+  onQaToAccountChange = (e) => { const id = e.target.value; this.setState((p) => Object.assign({ qa: this.mirrorTransfer(Object.assign({}, p.qa, { toAccountId: id, toCurrencyId: this.firstCurrencyOf(id) })) }, this.phClear(p, ['toAccountId', 'toCurrencyId']))); };
   // Автоперенос суммы: если валюта источника и получателя совпадают — сумма «куда» копируется из «откуда»
   // (пока пользователь сам не менял поле «куда»).
   mirrorTransfer(qa) {
@@ -1041,9 +1079,9 @@ class Component extends DCLogic {
     }
     return qa;
   }
-  onQaFromAmount = (e) => { const v = e.target.value; this.setState((p) => ({ qa: this.mirrorTransfer(Object.assign({}, p.qa, { fromAmount: v })) })); };
-  onQaFromCurrencyChange = (e) => { const v = e.target.value; this.setState((p) => ({ qa: this.mirrorTransfer(Object.assign({}, p.qa, { fromCurrencyId: v })) })); };
-  onQaToCurrencyChange = (e) => { const v = e.target.value; this.setState((p) => ({ qa: this.mirrorTransfer(Object.assign({}, p.qa, { toCurrencyId: v })) })); };
+  onQaFromAmount = (e) => { const v = e.target.value; this.setState((p) => Object.assign({ qa: this.mirrorTransfer(Object.assign({}, p.qa, { fromAmount: v })) }, this.phClear(p, ['fromAmount', 'toAmount']))); };
+  onQaFromCurrencyChange = (e) => { const v = e.target.value; this.setState((p) => Object.assign({ qa: this.mirrorTransfer(Object.assign({}, p.qa, { fromCurrencyId: v })) }, this.phClear(p, ['fromCurrencyId']))); };
+  onQaToCurrencyChange = (e) => { const v = e.target.value; this.setState((p) => Object.assign({ qa: this.mirrorTransfer(Object.assign({}, p.qa, { toCurrencyId: v })) }, this.phClear(p, ['toCurrencyId']))); };
   onQaToAmount = (e) => { const v = e.target.value; this.setNested('qa.toAmount', v); this.setNested('qa.toAmountTouched', true); };
   parseAmt(v) { return Number(String(v).replace(',', '.').replace(/[^0-9.\-]/g, '')) || 0; }
 
@@ -1077,7 +1115,7 @@ class Component extends DCLogic {
       fromAccountId: op.from_account_id || '', fromCurrencyId: op.from_currency_id || '', fromAmount: op.from_amount != null ? String(op.from_amount) : '',
       toAccountId: op.to_account_id || '', toCurrencyId: op.to_currency_id || '', toAmount: op.to_amount != null ? String(op.to_amount) : '' };
   }
-  openEditOp(op) { return () => this.setState({ modal: { kind: 'op' }, opEdit: this.opToForm(op), opError: '' }); }
+  openEditOp(op) { return () => this.setState({ modal: { kind: 'op' }, opEdit: this.opToForm(op), opError: '', opPText: '', opPBusy: false, opPErr: '', opPNotes: '', opPConf: [], opPChg: [] }); }
   onEfAccount = (e) => { const id = e.target.value; this.setNested('opEdit.accountId', id); this.setNested('opEdit.currencyId', this.firstCurrencyOf(id)); };
   onEfFromAccount = (e) => { const id = e.target.value; this.setNested('opEdit.fromAccountId', id); this.setNested('opEdit.fromCurrencyId', this.firstCurrencyOf(id)); };
   onEfToAccount = (e) => { const id = e.target.value; this.setNested('opEdit.toAccountId', id); this.setNested('opEdit.toCurrencyId', this.firstCurrencyOf(id)); };
@@ -1097,12 +1135,12 @@ class Component extends DCLogic {
           from_account_id: null, from_currency_id: null, from_amount: null, to_account_id: null, to_currency_id: null, to_amount: null };
       }
       await this.DL.saveOperation(row);
-      this.setState({ modal: null });
+      this.setState({ modal: null, opPText: '', opPBusy: false, opPErr: '', opPNotes: '', opPConf: [], opPChg: [] });
       this.reload();
     } catch (e) { this.setState({ opError: e.message || String(e) }); }
   };
   deleteOp(id) { return async () => { if (!confirm('Удалить операцию?')) return; await this.DL.deleteOperation(id); this.reload(); }; }
-  closeModal = () => this.setState({ modal: null });
+  closeModal = () => this.setState({ modal: null, opPText: '', opPBusy: false, opPErr: '', opPNotes: '', opPConf: [], opPChg: [] });
 
   // Редактирование операции прямо в главной форме «Новая операция».
   editRecent(op) {
@@ -1115,11 +1153,196 @@ class Component extends DCLogic {
       } else {
         qa.accountId = op.account_id || ''; qa.currencyId = op.currency_id || ''; qa.amount = op.amount != null ? String(op.amount) : ''; qa.categoryId = op.category_id || '';
       }
-      this.setState({ screen: 'home', qaTab: op.type, qa, qaEditId: op.id, qaError: '' });
+      this.setState({ screen: 'home', qaTab: op.type, qa, qaEditId: op.id, qaError: '', pText: '', pBusy: false, pErr: '', pNotes: '', pConf: [], pChg: [], pParsed: false });
       try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) {}
     };
   }
-  cancelQaEdit = () => { this.setState({ qaEditId: null, qa: this.blankQa(), qaError: '' }, () => this.seedQaDefaults()); };
+  cancelQaEdit = () => { this.setState({ qaEditId: null, qa: this.blankQa(), qaError: '', pText: '', pBusy: false, pErr: '', pNotes: '', pConf: [], pChg: [], pParsed: false }, () => this.seedQaDefaults()); };
+
+  // ===== Разбор фразы через Supabase Edge Function =====
+  phClear(prev, keys) {
+    return { pConf: (prev.pConf || []).filter((x) => !keys.includes(x)), pChg: (prev.pChg || []).filter((x) => !keys.includes(x)) };
+  }
+  phCls(scope, key) {
+    const conf = scope === 'op' ? (this.state.opPConf || []) : (this.state.pConf || []);
+    const chg = scope === 'op' ? (this.state.opPChg || []) : (this.state.pChg || []);
+    if (chg.includes(key)) return 'ph-chg';
+    if (conf.includes(key)) return 'ph-warn';
+    return '';
+  }
+  accIdByName(name) { const a = (this.state.data.accounts || []).find((x) => x.name === name); return a ? a.id : ''; }
+  catIdByName(name, kind) { const c = (this.state.data.categories || []).find((x) => x.kind === kind && x.name === name); return c ? c.id : ''; }
+  curIdByCode(code) { const u = String(code || '').toUpperCase(); const c = (this.state.data.currencies || []).find((x) => (x.code || '').toUpperCase() === u); return c ? c.id : ''; }
+  accName(id) { const a = (this.state.data.accounts || []).find((x) => x.id === id); return a ? a.name : ''; }
+  catName(id) { const c = (this.state.data.categories || []).find((x) => x.id === id); return c ? c.name : ''; }
+  curCode(id) { const c = (this.state.data.currencies || []).find((x) => x.id === id); return c ? c.code : ''; }
+
+  mapParseFields(arr, type) {
+    if (!Array.isArray(arr)) return [];
+    const out = [];
+    arr.forEach((name) => {
+      if (type === 'transfer') {
+        if (name === 'walletFrom' || name === 'wallet') out.push('fromAccountId');
+        else if (name === 'walletTo') out.push('toAccountId');
+        else if (name === 'currencyFrom') out.push('fromCurrencyId');
+        else if (name === 'currencyTo') out.push('toCurrencyId');
+        else if (name === 'amountFrom') out.push('fromAmount');
+        else if (name === 'amountTo') out.push('toAmount');
+        else if (name === 'currency') { out.push('fromCurrencyId', 'toCurrencyId'); }
+        else if (name === 'amount') { out.push('fromAmount', 'toAmount'); }
+        else if (name === 'date') out.push('date');
+      } else {
+        if (name === 'wallet') out.push('accountId');
+        else if (name === 'category') out.push('categoryId');
+        else if (name === 'currency') out.push('currencyId');
+        else if (name === 'amount') out.push('amount');
+        else if (name === 'date') out.push('date');
+      }
+    });
+    return out;
+  }
+  buildExisting(form) {
+    const clean = (v) => (v == null ? '' : String(v));
+    if (form.type === 'transfer') {
+      return { type: 'transfer', walletFrom: this.accName(form.fromAccountId), walletTo: this.accName(form.toAccountId),
+        currencyFrom: this.curCode(form.fromCurrencyId), amountFrom: clean(form.fromAmount),
+        currencyTo: this.curCode(form.toCurrencyId), amountTo: clean(form.toAmount), date: clean(form.date) };
+    }
+    return { type: form.type, wallet: this.accName(form.accountId), category: this.catName(form.categoryId),
+      currency: this.curCode(form.currencyId), amount: clean(form.amount), date: clean(form.date) };
+  }
+  mutateForm(form, p, type, flags) {
+    flags = flags || { autoConf: [], notes: [] };
+    const clean = (v) => (v == null ? '' : String(v));
+    if (type === 'transfer') {
+      const wf = this.accIdByName(p.walletFrom); if (wf) form.fromAccountId = wf;
+      const wt = this.accIdByName(p.walletTo); if (wt) form.toAccountId = wt;
+      const nf = String(p.currencyFrom || '').trim();
+      const nt = String(p.currencyTo || '').trim();
+      if (nf) form.fromCurrencyId = this.resolveAcctCurrency(form.fromAccountId, nf, 'fromCurrencyId', flags);
+      else if (wf) form.fromCurrencyId = this.firstCurrencyOf(form.fromAccountId);
+      if (nt) form.toCurrencyId = this.resolveAcctCurrency(form.toAccountId, nt, 'toCurrencyId', flags);
+      else if (wt) form.toCurrencyId = this.firstCurrencyOf(form.toAccountId);
+      if (clean(p.amountFrom)) form.fromAmount = clean(p.amountFrom);
+      if (clean(p.amountTo)) { form.toAmount = clean(p.amountTo); form.toAmountTouched = true; }
+      if (clean(p.date)) form.date = clean(p.date);
+    } else {
+      const w = this.accIdByName(p.wallet); if (w) form.accountId = w;
+      const nc = String(p.currency || '').trim();
+      if (nc) form.currencyId = this.resolveAcctCurrency(form.accountId, nc, 'currencyId', flags);
+      else if (w) form.currencyId = this.firstCurrencyOf(w);
+      const cat = this.catIdByName(p.category, type); if (cat) form.categoryId = cat;
+      if (clean(p.amount)) form.amount = clean(p.amount);
+      if (clean(p.date)) form.date = clean(p.date);
+    }
+    return form;
+  }
+  // Выбирает валюту для кошелька; если названной валюты на кошельке нет —
+  // подставляет доступную и помечает это в flags (подсветка + пояснение).
+  resolveAcctCurrency(accountId, namedCode, fieldKey, flags) {
+    const code = String(namedCode || '').trim();
+    if (!code) return this.firstCurrencyOf(accountId);
+    if (!accountId) { const g = this.curIdByCode(code); return g || ''; }
+    const avail = this.currenciesOf(accountId);
+    const match = avail.find((c) => (c.code || '').toUpperCase() === code.toUpperCase());
+    const chosen = match ? match.id : this.firstCurrencyOf(accountId);
+    if (chosen && this.curCode(chosen).toUpperCase() !== code.toUpperCase()) {
+      flags.autoConf.push(fieldKey);
+      flags.notes.push(this.subNote(code, this.accName(accountId), avail.map((c) => c.code), this.curCode(chosen)));
+    }
+    return chosen;
+  }
+  subNote(named, walletName, availCodes, subCode) {
+    const uniq = [...new Set((availCodes || []).filter(Boolean).map((c) => (c || '').toUpperCase()))];
+    const nm = (named || '').toUpperCase();
+    const sub = (subCode || '').toUpperCase();
+    if (uniq.length === 1) return 'названы ' + nm + ', на кошельке «' + walletName + '» доступен только ' + uniq[0];
+    if (uniq.length > 1) return 'названы ' + nm + ', на кошельке «' + walletName + '» такой валюты нет (есть ' + uniq.join(', ') + ') — подставлен ' + sub;
+    return 'названы ' + nm + ', на кошельке «' + walletName + '» валют нет — подставлен ' + sub;
+  }
+  async callParser(text, existing) {
+    const cfg = this.DL.getConfig();
+    const key = (cfg && cfg.key) || this.DL.getParseKey();
+    if (!key) throw new Error('Разбор фразы требует anon-ключ. В демо-режиме вставьте ключ в настройках (⚙ → «Ключ для разбора фразы») или подключитесь к Supabase.');
+    const d = this.state.data;
+    const body = {
+      text: text,
+      wallets: (d.accounts || []).map((a) => a.name),
+      categories: (d.categories || []).filter((c) => c.kind === 'expense').map((c) => c.name),
+      incomeCategories: (d.categories || []).filter((c) => c.kind === 'income').map((c) => c.name),
+      currencies: (d.currencies || []).map((c) => c.code),
+    };
+    if (existing) body.existing = existing;
+    let resp;
+    try {
+      resp = await fetch('https://rnvgwednspdcekedzztt.supabase.co/functions/v1/parse-expense', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key, 'apikey': key },
+        body: JSON.stringify(body),
+      });
+    } catch (e) { throw new Error('Не удалось связаться с сервером разбора. Проверьте интернет-соединение.'); }
+    const raw = await resp.text();
+    if (!resp.ok) {
+      let msg = 'Сервер разбора вернул ошибку (' + resp.status + ')';
+      try { const j = JSON.parse(raw); if (j && (j.error || j.message)) msg = j.error || j.message; } catch (e) { if (raw) msg = raw.slice(0, 200); }
+      throw new Error(msg);
+    }
+    let p;
+    try { p = JSON.parse(raw); } catch (e) { throw new Error('Сервер вернул неожиданный ответ — не удалось разобрать.'); }
+    return p;
+  }
+
+  onPText = (e) => this.setState({ pText: e.target.value, pParsed: false });
+  onPKey = (e) => { if (e.key === 'Enter') { e.preventDefault(); this.doQaParse(); } };
+  doQaParse = async () => {
+    const text = (this.state.pText || '').trim();
+    if (!text || this.state.pBusy || !this.state.data) return;
+    this.setState({ pBusy: true, pErr: '', pNotes: '' });
+    try {
+      const existing = this.state.qaEditId ? this.buildExisting(Object.assign({ type: this.state.qaTab }, this.state.qa)) : null;
+      const p = await this.callParser(text, existing);
+      this.setState((prev) => {
+        const type = ['transfer', 'income', 'expense'].includes(p.type) ? p.type : prev.qaTab;
+        const flags = { autoConf: [], notes: [] };
+        const form = this.mutateForm(Object.assign({}, prev.qa), p, type, flags);
+        const editing = !!prev.qaEditId;
+        const conf = this.mapParseFields(p.confidence, type);
+        flags.autoConf.forEach((k) => { if (!conf.includes(k)) conf.push(k); });
+        const parts = [];
+        if (p.notes != null && String(p.notes).trim()) parts.push(String(p.notes).trim());
+        flags.notes.forEach((n) => parts.push(n));
+        return { qa: form, qaTab: type, qaError: '', pBusy: false, pErr: '', pParsed: true,
+          pConf: conf, pChg: editing ? this.mapParseFields(p.changed, type) : [],
+          pNotes: parts.join(' • ') };
+      });
+    } catch (e) { this.setState({ pBusy: false, pErr: e.message || String(e) }); }
+  };
+
+  onOpPText = (e) => this.setState({ opPText: e.target.value });
+  onOpPKey = (e) => { if (e.key === 'Enter') { e.preventDefault(); this.doOpParse(); } };
+  doOpParse = async () => {
+    const text = (this.state.opPText || '').trim();
+    if (!text || this.state.opPBusy || !this.state.opEdit) return;
+    this.setState({ opPBusy: true, opPErr: '', opPNotes: '' });
+    try {
+      const existing = this.buildExisting(this.state.opEdit);
+      const p = await this.callParser(text, existing);
+      this.setState((prev) => {
+        const type = ['transfer', 'income', 'expense'].includes(p.type) ? p.type : prev.opEdit.type;
+        const flags = { autoConf: [], notes: [] };
+        const form = this.mutateForm(Object.assign({}, prev.opEdit), p, type, flags);
+        form.type = type;
+        const conf = this.mapParseFields(p.confidence, type);
+        flags.autoConf.forEach((k) => { if (!conf.includes(k)) conf.push(k); });
+        const parts = [];
+        if (p.notes != null && String(p.notes).trim()) parts.push(String(p.notes).trim());
+        flags.notes.forEach((n) => parts.push(n));
+        return { opEdit: form, opError: '', opPBusy: false, opPErr: '',
+          opPConf: conf, opPChg: this.mapParseFields(p.changed, type),
+          opPNotes: parts.join(' • ') };
+      });
+    } catch (e) { this.setState({ opPBusy: false, opPErr: e.message || String(e) }); }
+  };
 
   submitQuick = async () => {
     const { qaTab, qa, qaEditId } = this.state;
@@ -1149,7 +1372,7 @@ class Component extends DCLogic {
       this.playCashSound();
       const keep = { accountId: qa.accountId, currencyId: qa.currencyId, categoryId: qa.categoryId, date: qa.date,
         fromAccountId: qa.fromAccountId, fromCurrencyId: qa.fromCurrencyId, toAccountId: qa.toAccountId, toCurrencyId: qa.toCurrencyId };
-      this.setState({ qa: Object.assign(this.blankQa(), keep), qaError: '', submitting: false, qaEditId: null });
+      this.setState({ qa: Object.assign(this.blankQa(), keep), qaError: '', submitting: false, qaEditId: null, pText: '', pBusy: false, pErr: '', pNotes: '', pConf: [], pChg: [], pParsed: false });
       this.reload();
     } catch (e) { this.setState({ qaError: e.message || String(e), submitting: false }); }
   };
@@ -1165,6 +1388,8 @@ class Component extends DCLogic {
   };
   doDisconnect = async () => { this.DL.setConfig(null, null); this.setState({ conn: { url: '', key: '' }, settingsOpen: false }); await this.reload(); };
   doResetDemo = async () => { await this.DL.resetDemo(); await this.reload(); };
+  onParseKey = (e) => this.setState({ parseKey: e.target.value, parseKeyMsg: '' });
+  saveParseKey = () => { this.DL.setParseKey(this.state.parseKey); this.setState({ parseKeyMsg: (this.state.parseKey || '').trim() ? 'Ключ сохранён — разбор фразы работает в демо-режиме.' : 'Ключ удалён.' }); };
 
   commonVals() {
     const screen = this.state.screen;
@@ -1188,6 +1413,7 @@ class Component extends DCLogic {
       conn: this.state.conn, connError: this.state.connError,
       onConnUrl: this.field('conn.url'), onConnKey: this.field('conn.key'),
       doConnect: this.doConnect, doDisconnect: this.doDisconnect, doResetDemo: this.doResetDemo,
+      parseKey: this.state.parseKey, onParseKey: this.onParseKey, saveParseKey: this.saveParseKey, parseKeyMsg: this.state.parseKeyMsg,
       modeLabel: isDemo ? 'Демо (браузер)' : 'Supabase', modeStyle: 'color:' + (isDemo ? '#a06a00' : '#2a5fd0') + ';',
       locked: this.state.locked, pwInput: this.state.pwInput, onPwInput: this.field('pwInput'), onPwKey: this.onPwKey, pwError: this.state.pwError, tryUnlock: this.tryUnlock,
       hasPassword: !!this.state.pwHash, pwSectionTitle: this.state.pwHash ? 'Смена пароля' : 'Установка пароля',
@@ -1223,7 +1449,12 @@ class Component extends DCLogic {
     const qaTabs = qaTabsDef.map(([id, label]) => ({ label, onClick: this.setQaTab(id),
       style: 'flex:1;border:none;border-radius:8px;padding:8px 0;font-size:13px;font-weight:700;cursor:pointer;background:' + (this.state.qaTab === id ? '#fff' : 'transparent') + ';color:' + (this.state.qaTab === id ? '#2a5fd0' : '#7a827c') + ';box-shadow:' + (this.state.qaTab === id ? '0 1px 3px rgba(0,0,0,.08)' : 'none') + ';' }));
     const kind = this.state.qaTab === 'income' ? 'income' : 'expense';
-    const recentRows = d.operations.slice(0, 20).map((op) => Object.assign(this.opRow(op), { onEditInline: this.editRecent(op), onDel: this.deleteOp(op.id) }));
+    const byEntry = d.operations.slice().sort((a, b) => {
+      const ca = a.created_at || '', cb = b.created_at || '';
+      if (ca && cb && ca !== cb) return ca < cb ? 1 : -1;
+      return a.op_date < b.op_date ? 1 : -1;
+    });
+    const recentRows = byEntry.slice(0, 20).map((op) => Object.assign(this.opRow(op), { onEditInline: this.editRecent(op), onDel: this.deleteOp(op.id) }));
     // виджет: расходы текущего месяца по категориям
     const ym = new Date().toISOString().slice(0, 7);
     const catMap = {};
@@ -1260,6 +1491,14 @@ class Component extends DCLogic {
       onQaFromAccount: this.onQaFromAccountChange, onQaFromCurrency: this.onQaFromCurrencyChange, onQaFromAmount: this.onQaFromAmount,
       onQaToAccount: this.onQaToAccountChange, onQaToCurrency: this.onQaToCurrencyChange, onQaToAmount: this.onQaToAmount,
       submitQuick: this.submitQuick,
+      pText: this.state.pText, onPText: this.onPText, onPKey: this.onPKey, doPParse: this.doQaParse,
+      pBusy: this.state.pBusy, pErr: this.state.pErr, pNotes: this.state.pNotes,
+      pDisabled: this.state.pBusy || !(this.state.pText || '').trim(),
+      pParseBtnStyle: (!((this.state.pText || '').trim()) || this.state.pBusy) ? 'flex:1;border:none;border-radius:10px;font-size:14px;font-weight:800;color:#fff;background:#c2ccdb;cursor:not-allowed;' : (this.state.pParsed ? 'flex:1;border:1px solid #c3d2f0;border-radius:10px;font-size:14px;font-weight:700;color:#8fa0bd;background:#fff;cursor:pointer;' : 'flex:1;border:none;border-radius:10px;font-size:14px;font-weight:800;color:#fff;background:#2a5fd0;cursor:pointer;box-shadow:0 6px 16px -7px rgba(42,95,208,.95);'),
+      pSubmitBtnStyle: this.state.pParsed ? 'flex:1;border:none;border-radius:10px;font-size:14px;font-weight:800;color:#fff;background:#2a5fd0;cursor:pointer;box-shadow:0 6px 16px -7px rgba(42,95,208,.95);' : 'flex:1;border:1px solid #c3d2f0;border-radius:10px;font-size:14px;font-weight:700;color:#8fa0bd;background:#fff;cursor:pointer;',
+      clsAccount: this.phCls('qa', 'accountId'), clsCurrency: this.phCls('qa', 'currencyId'), clsAmount: this.phCls('qa', 'amount'), clsCategory: this.phCls('qa', 'categoryId'), clsDate: this.phCls('qa', 'date'),
+      clsFromAccount: this.phCls('qa', 'fromAccountId'), clsFromCurrency: this.phCls('qa', 'fromCurrencyId'), clsFromAmount: this.phCls('qa', 'fromAmount'),
+      clsToAccount: this.phCls('qa', 'toAccountId'), clsToCurrency: this.phCls('qa', 'toCurrencyId'), clsToAmount: this.phCls('qa', 'toAmount'),
     };
   }
 
@@ -1310,7 +1549,9 @@ class Component extends DCLogic {
     const cur = (id) => d.currencies.find((c) => c.id === id);
     const acc = (id) => { const a = d.accounts.find((x) => x.id === id); return a ? a.name : '—'; };
     const dt = op.op_date.split('-'); const dateTxt = dt[2] + '.' + dt[1] + '.' + dt[0];
+    const dateShort = dt[2] + '.' + dt[1]; const dateYear = dt[0];
     let title, sub, amountTxt, color, badge, badgeColor, badgeBg;
+    let amountTxt2 = '';
     if (op.type === 'expense') {
       title = F.categoryName(op.category_id, d.categories); sub = acc(op.account_id);
       amountTxt = '−' + F.formatMoney(op.amount, cur(op.currency_id)); color = '#c0492f'; badge = 'Расход'; badgeColor = '#c0492f'; badgeBg = '#fbeae6';
@@ -1320,14 +1561,16 @@ class Component extends DCLogic {
     } else {
       title = 'Перевод'; sub = acc(op.from_account_id) + ' → ' + acc(op.to_account_id);
       const same = op.from_currency_id === op.to_currency_id && op.from_amount === op.to_amount;
-      amountTxt = same ? F.formatMoney(op.from_amount, cur(op.from_currency_id)) : F.formatMoney(op.from_amount, cur(op.from_currency_id)) + ' → ' + F.formatMoney(op.to_amount, cur(op.to_currency_id));
+      amountTxt = F.formatMoney(op.from_amount, cur(op.from_currency_id));
+      if (!same) amountTxt2 = '→ ' + F.formatMoney(op.to_amount, cur(op.to_currency_id));
       color = '#5b635d'; badge = 'Перевод'; badgeColor = '#8a6d1f'; badgeBg = '#f6efda';
     }
     const bv = op.type === 'transfer' ? F.toBase(op.from_amount, op.from_currency_id, d.currencies) : F.opAmountBase(op, d.currencies);
     const baseTxt = (cur(op.type === 'transfer' ? op.from_currency_id : op.currency_id) || {}).is_base ? '' : '≈ ' + F.formatBase(bv, d.currencies);
-    return { id: op.id, dateTxt, title, sub, note: op.note || '', amountTxt, baseTxt, badge,
+    return { id: op.id, dateTxt, dateShort, dateYear, title, sub, note: op.note || '', amountTxt, amountTxt2, baseTxt, badge,
       badgeStyle: 'font-size:11px;font-weight:800;padding:3px 9px;border-radius:7px;color:' + badgeColor + ';background:' + badgeBg + ';',
       amountStyle: 'font-weight:800;font-size:14px;color:' + color + ';',
+      amountStyle2: 'font-weight:700;font-size:12px;color:#8a928c;',
       onEdit: this.openEditOp(op), onDelete: this.deleteOp(op.id) };
   }
 
@@ -1657,6 +1900,13 @@ class Component extends DCLogic {
       onEfFromAccount: this.onEfFromAccount, onEfFromCurrency: this.field('opEdit.fromCurrencyId'), onEfFromAmount: this.field('opEdit.fromAmount'),
       onEfToAccount: this.onEfToAccount, onEfToCurrency: this.field('opEdit.toCurrencyId'), onEfToAmount: this.field('opEdit.toAmount'),
       saveEditOp: this.saveEditOp, closeModal: this.closeModal,
+      opPText: this.state.opPText, onOpPText: this.onOpPText, onOpPKey: this.onOpPKey, doOpPParse: this.doOpParse,
+      opPBusy: this.state.opPBusy, opPErr: this.state.opPErr, opPNotes: this.state.opPNotes,
+      opPDisabled: this.state.opPBusy || !(this.state.opPText || '').trim(),
+      opPBtnStyle: 'flex:none;padding:0 16px;height:40px;border:none;border-radius:10px;font-size:13px;font-weight:800;color:#fff;background:' + ((this.state.opPBusy || !(this.state.opPText || '').trim()) ? '#b6c1d2' : '#2a5fd0') + ';cursor:' + ((this.state.opPBusy || !(this.state.opPText || '').trim()) ? 'not-allowed' : 'pointer') + ';',
+      efClsAccount: this.phCls('op', 'accountId'), efClsCurrency: this.phCls('op', 'currencyId'), efClsAmount: this.phCls('op', 'amount'), efClsCategory: this.phCls('op', 'categoryId'), efClsDate: this.phCls('op', 'date'),
+      efClsFromAccount: this.phCls('op', 'fromAccountId'), efClsFromCurrency: this.phCls('op', 'fromCurrencyId'), efClsFromAmount: this.phCls('op', 'fromAmount'),
+      efClsToAccount: this.phCls('op', 'toAccountId'), efClsToCurrency: this.phCls('op', 'toCurrencyId'), efClsToAmount: this.phCls('op', 'toAmount'),
     };
   }
 

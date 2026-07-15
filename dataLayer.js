@@ -28,6 +28,20 @@ export function mode() {
   return getConfig() ? 'supabase' : 'demo';
 }
 
+// ---- Ключ только для вызова Edge-функции разбора фразы (демо-режим) ----
+// Позволяет пользоваться разбором фразы, не подключая базу: данные остаются
+// в localStorage, ключ используется ИСКЛЮЧИТЕЛЬНО для запроса к функции.
+const PARSE_KEY = 'hm_parse_fn_key';
+export function getParseKey() {
+  try { return localStorage.getItem(PARSE_KEY) || ''; } catch (e) { return ''; }
+}
+export function setParseKey(key) {
+  try {
+    if (key && key.trim()) localStorage.setItem(PARSE_KEY, key.trim());
+    else localStorage.removeItem(PARSE_KEY);
+  } catch (e) {}
+}
+
 let _client = null;
 function client() {
   const cfg = getConfig();
