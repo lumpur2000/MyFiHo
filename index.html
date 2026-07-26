@@ -197,7 +197,7 @@
         <div>
           <div style="margin-bottom:14px;background:linear-gradient(180deg,#eef4ff,#e7eefc);border:1px solid #cfdcfa;border-radius:16px;padding:16px 18px;box-shadow:0 12px 34px -22px rgba(42,95,208,.55);">
             <div style="display:flex;flex-direction:column;gap:10px;">
-              <textarea value="{{ pText }}" onInput="{{ onPText }}" onKeyDown="{{ onPKey }}" placeholder="" style="flex:1;min-width:0;min-height:74px;padding:13px 15px;border:1px solid #c9d6ef;border-radius:12px;background:#fff;font-size:16px;font-weight:600;line-height:1.5;resize:vertical;"></textarea>
+              <textarea data-parse-input="1" value="{{ pText }}" onInput="{{ onPText }}" onKeyDown="{{ onPKey }}" placeholder="" style="flex:1;min-width:0;min-height:74px;padding:13px 15px;border:1px solid #c9d6ef;border-radius:12px;background:#fff;font-size:16px;font-weight:600;line-height:1.5;resize:vertical;"></textarea>
               <div style="display:flex;gap:9px;height:44px;">
                 <button onClick="{{ doPParse }}" disabled="{{ pDisabled }}" style="{{ pParseBtnStyle }}">Разобрать</button>
                 <button onClick="{{ submitQuick }}" disabled="{{ qaSubmitDisabled }}" style="{{ pSubmitBtnStyle }}">Провести</button>
@@ -254,12 +254,18 @@
     <div data-screen-label="Записи">
       <h1 style="margin:0 0 20px;font-size:26px;font-weight:800;letter-spacing:-.02em;">Записи</h1>
       <div style="background:#fff;border:1px solid #e9ece9;border-radius:16px;padding:18px 20px;margin-bottom:18px;">
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
-          <div style="display:flex;background:#eef1ee;border-radius:10px;padding:3px;gap:3px;">
-            <sc-for list="{{ modeBtns }}" as="m" hint-placeholder-count="2"><button onClick="{{ m.onClick }}" style="{{ m.style }}">{{ m.label }}</button></sc-for>
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #eef0ee;">
+          <div>
+            <span style="display:block;font-size:11px;font-weight:800;color:#8a928c;letter-spacing:.03em;text-transform:uppercase;margin-bottom:7px;">Смотреть записи</span>
+            <div style="display:flex;background:#eef1ee;border-radius:12px;padding:4px;gap:4px;">
+              <sc-for list="{{ modeBtns }}" as="m" hint-placeholder-count="2"><button onClick="{{ m.onClick }}" style="{{ m.style }}">{{ m.label }}</button></sc-for>
+            </div>
           </div>
-          <div style="display:flex;gap:6px;">
-            <sc-for list="{{ quickBtns }}" as="q" hint-placeholder-count="3"><button onClick="{{ q.onClick }}" style="{{ q.style }}">{{ q.label }}</button></sc-for>
+          <div>
+            <span style="display:block;font-size:11px;font-weight:700;color:#8a928c;margin-bottom:5px;">Быстрый период</span>
+            <select value="{{ quickSel }}" onChange="{{ onQuickPeriod }}" style="height:42px;padding:0 12px;border:1px solid #dde1dd;border-radius:10px;background:#fff;font-size:13px;font-weight:700;color:#3a423d;min-width:170px;cursor:pointer;">
+              <sc-for list="{{ quickOptions }}" as="o" hint-placeholder-count="5"><option value="{{ o.id }}">{{ o.label }}</option></sc-for>
+            </select>
           </div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
@@ -978,6 +984,19 @@ class Component extends DCLogic {
     } catch (e) {}
   }
 
+  focusParse = () => {
+    [0, 120, 350, 800].forEach((ms) => setTimeout(() => {
+      try {
+        if (this.state.screen !== 'home' || this.state.locked) return;
+        const el = document.querySelector('[data-parse-input]');
+        if (!el) return;
+        const ae = document.activeElement;
+        if (ae === el) return;
+        if (ae && ae !== document.body && /^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName)) return;
+        el.focus();
+      } catch (e) {}
+    }, ms));
+  };
   isoLocal(dt) { const p = (n) => String(n).padStart(2, '0'); return dt.getFullYear() + '-' + p(dt.getMonth() + 1) + '-' + p(dt.getDate()); }
   blankQa() {
     const today = this.isoLocal(new Date());
@@ -996,6 +1015,7 @@ class Component extends DCLogic {
     await this.reload();
     this.loadPassword();
     this.autoRefreshRates();
+    this.focusParse();
     this._onScroll = () => {
       const f = this.state.flt;
       if (this.state.screen !== 'records' || !f || f.mode !== 'entry') return;
@@ -1052,7 +1072,7 @@ class Component extends DCLogic {
   onPwKey = (e) => { if (e.key === 'Enter') this.tryUnlock(); };
   tryUnlock = async () => {
     const h = await this.DL.hashPassword(this.state.pwInput || '');
-    if (h === this.state.pwHash) { try { sessionStorage.setItem('hm_unlocked', '1'); } catch (e) {} this.setState({ locked: false, pwInput: '', pwError: '' }); }
+    if (h === this.state.pwHash) { try { sessionStorage.setItem('hm_unlocked', '1'); } catch (e) {} this.setState({ locked: false, pwInput: '', pwError: '' }); this.focusParse(); }
     else this.setState({ pwError: 'Неверный пароль' });
   };
   savePassword = async () => {
@@ -1194,6 +1214,24 @@ class Component extends DCLogic {
   fltToday = () => { const t = this.isoLocal(new Date()); this.setFltRange(t, t); };
   fltYesterday = () => { const d = new Date(); d.setDate(d.getDate() - 1); const y = this.isoLocal(d); this.setFltRange(y, y); };
   fltLast7 = () => { const d = new Date(); const to = this.isoLocal(d); d.setDate(d.getDate() - 6); this.setFltRange(this.isoLocal(d), to); };
+  quickRanges() {
+    const iso = (dt) => this.isoLocal(dt);
+    const mk = (days) => { const a = new Date(); const to = iso(a); a.setDate(a.getDate() - days); return { from: iso(a), to }; };
+    const now = new Date();
+    const yd = new Date(); yd.setDate(yd.getDate() - 1);
+    return {
+      today: { label: 'Сегодня', from: iso(now), to: iso(now) },
+      yesterday: { label: 'Вчера', from: iso(yd), to: iso(yd) },
+      d7: Object.assign({ label: 'За 7 дней' }, mk(6)),
+      d30: Object.assign({ label: 'За 30 дней' }, mk(29)),
+      month: { label: 'Этот месяц', from: iso(new Date(now.getFullYear(), now.getMonth(), 1)), to: iso(new Date(now.getFullYear(), now.getMonth() + 1, 0)) },
+      year: { label: 'Весь год', from: now.getFullYear() + '-01-01', to: now.getFullYear() + '-12-31' },
+    };
+  }
+  onQuickPeriod = (e) => {
+    const r = this.quickRanges()[e.target.value];
+    if (r) this.setFltRange(r.from, r.to);
+  };
   goEntries = () => {
     const d = new Date(); const to = this.isoLocal(d); d.setDate(d.getDate() - 6); const from = this.isoLocal(d);
     this.setState((p) => {
@@ -1466,7 +1504,8 @@ class Component extends DCLogic {
           pConf: conf, pChg: editing ? this.mapParseFields(p.changed, type) : [],
           pNotes: parts.join(' • ') };
       });
-    } catch (e) { this.setState({ pBusy: false, pErr: e.message || String(e) }); }
+      this.focusParse();
+    } catch (e) { this.setState({ pBusy: false, pErr: e.message || String(e) }); this.focusParse(); }
   };
 
   onOpPText = (e) => this.setState({ opPText: e.target.value });
@@ -1528,6 +1567,7 @@ class Component extends DCLogic {
       const keep = { accountId: qa.accountId, currencyId: qa.currencyId, categoryId: qa.categoryId, date: qa.date,
         fromAccountId: qa.fromAccountId, fromCurrencyId: qa.fromCurrencyId, toAccountId: qa.toAccountId, toCurrencyId: qa.toCurrencyId };
       this.setState({ qa: Object.assign(this.blankQa(), keep), qaError: '', submitting: false, qaEditId: null, pText: '', pBusy: false, pErr: '', pNotes: '', pConf: [], pChg: [], pParsed: false });
+      this.focusParse();
       this.reload();
     } catch (e) { this.setState({ qaError: e.message || String(e), submitting: false }); }
   };
@@ -1765,10 +1805,11 @@ class Component extends DCLogic {
     }
     const modeDef = [['op', 'По дате операции'], ['entry', 'По дате внесения']];
     const modeBtns = modeDef.map(([id, label]) => ({ label, onClick: this.setFltMode(id),
-      style: 'border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;background:' + (mode === id ? '#fff' : 'transparent') + ';color:' + (mode === id ? '#2a5fd0' : '#7a827c') + ';box-shadow:' + (mode === id ? '0 1px 3px rgba(0,0,0,.08)' : 'none') + ';' }));
-    const quickDef = [['Сегодня', this.fltToday], ['Вчера', this.fltYesterday], ['За 7 дней', this.fltLast7]];
-    const quickBtns = quickDef.map(([label, fn]) => ({ label, onClick: fn,
-      style: 'height:34px;padding:0 14px;border:1px solid #dde1dd;background:#fff;border-radius:9px;font-size:12px;font-weight:700;color:#5b635d;cursor:pointer;' }));
+      style: 'border:none;border-radius:9px;padding:11px 22px;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:-.01em;background:' + (mode === id ? '#2a5fd0' : 'transparent') + ';color:' + (mode === id ? '#fff' : '#7a827c') + ';box-shadow:' + (mode === id ? '0 6px 16px -8px rgba(42,95,208,.9)' : 'none') + ';' }));
+    const ranges = this.quickRanges();
+    let quickSel = 'custom';
+    Object.keys(ranges).forEach((k) => { if (ranges[k].from === f.from && ranges[k].to === f.to) quickSel = quickSel === 'custom' ? k : quickSel; });
+    const quickOptions = Object.keys(ranges).map((k) => ({ id: k, label: ranges[k].label })).concat([{ id: 'custom', label: 'Свой период' }]);
     const typeDef = [['all', 'Все'], ['expense', 'Расходы'], ['income', 'Доходы'], ['transfer', 'Переводы']];
     const typeTabs = typeDef.map(([id, label]) => ({ label, onClick: this.setFltType(id),
       style: 'border:1px solid ' + (fd.type === id ? '#2a5fd0' : '#dde1dd') + ';background:' + (fd.type === id ? '#2a5fd0' : '#fff') + ';color:' + (fd.type === id ? '#fff' : '#5b635d') + ';font-weight:700;font-size:13px;padding:8px 16px;border-radius:9px;cursor:pointer;' }));
@@ -1778,7 +1819,8 @@ class Component extends DCLogic {
     const dirty = JSON.stringify(f) !== JSON.stringify(fd);
     return {
       recRows: rows, recEmpty: ops.length === 0, recCount: ops.length + ' оп.',
-      recModeOp: mode === 'op', recModeEntry: mode === 'entry', modeBtns, quickBtns, entryGroups, entryMore,
+      recModeOp: mode === 'op', recModeEntry: mode === 'entry', modeBtns, entryGroups, entryMore,
+      quickOptions, quickSel, onQuickPeriod: this.onQuickPeriod,
       recSortLabel: mode === 'op' ? 'Сортировка:' : 'По дате внесения — от новых к старым',
       periodLabel: mode === 'entry' ? 'Период по дате внесения' : 'Период по дате операции',
       recTotalIn: F.formatBase(totIn, d.currencies), recTotalExp: F.formatBase(totExp, d.currencies), recNet: F.formatBase(totIn - totExp, d.currencies),
