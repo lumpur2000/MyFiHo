@@ -229,8 +229,15 @@
 
       <!-- ВИДЖЕТ: расходы месяца по категориям -->
       <div style="background:#fff;border:1px solid #e9ece9;border-radius:16px;padding:20px 22px;margin-top:22px;">
-        <h2 style="margin:0 0 16px;font-size:16px;font-weight:800;">Расходы этого месяца по категориям</h2>
-        <sc-if value="{{ monthCatsEmpty }}" hint-placeholder-val=""><div style="padding:20px 0;text-align:center;color:#a3aaa5;font-weight:600;">В этом месяце расходов пока нет</div></sc-if>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px;">
+          <h2 style="margin:0;font-size:16px;font-weight:800;">Расходы по категориям</h2>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <button onClick="{{ monthPrev }}" title="Предыдущий месяц" style="width:32px;height:32px;border:1px solid #e0e4e0;background:#fff;border-radius:9px;cursor:pointer;color:#5b635d;font-size:14px;font-weight:800;">‹</button>
+            <div style="min-width:150px;text-align:center;font-size:13px;font-weight:800;color:#3a423d;">{{ monthTitle }}</div>
+            <button onClick="{{ monthNext }}" disabled="{{ monthNextOff }}" title="Следующий месяц" style="{{ monthNextStyle }}">›</button>
+          </div>
+        </div>
+        <sc-if value="{{ monthCatsEmpty }}" hint-placeholder-val=""><div style="padding:20px 0;text-align:center;color:#a3aaa5;font-weight:600;">{{ monthEmptyTxt }}</div></sc-if>
         <div style="display:flex;flex-direction:column;gap:11px;">
           <sc-for list="{{ monthCats }}" as="c" hint-placeholder-count="5">
             <div style="display:flex;align-items:center;gap:14px;">
@@ -984,6 +991,8 @@ class Component extends DCLogic {
     } catch (e) {}
   }
 
+  monthPrev = () => this.setState((p) => ({ monthOff: (p.monthOff || 0) + 1 }));
+  monthNext = () => this.setState((p) => ({ monthOff: Math.max(0, (p.monthOff || 0) - 1) }));
   focusParse = () => {
     [0, 120, 350, 800].forEach((ms) => setTimeout(() => {
       try {
@@ -1366,24 +1375,18 @@ class Component extends DCLogic {
   catName(id) { const c = (this.state.data.categories || []).find((x) => x.id === id); return c ? c.name : ''; }
   curCode(id) { const c = (this.state.data.currencies || []).find((x) => x.id === id); return c ? c.code : ''; }
 
+  // Подсвечиваем только те поля, которые разбор вообще трогает.
   mapParseFields(arr, type) {
     if (!Array.isArray(arr)) return [];
     const out = [];
     arr.forEach((name) => {
       if (type === 'transfer') {
-        if (name === 'walletFrom' || name === 'wallet') out.push('fromAccountId');
-        else if (name === 'walletTo') out.push('toAccountId');
-        else if (name === 'currencyFrom') out.push('fromCurrencyId');
-        else if (name === 'currencyTo') out.push('toCurrencyId');
-        else if (name === 'amountFrom') out.push('fromAmount');
+        if (name === 'amountFrom') out.push('fromAmount');
         else if (name === 'amountTo') out.push('toAmount');
-        else if (name === 'currency') { out.push('fromCurrencyId', 'toCurrencyId'); }
         else if (name === 'amount') { out.push('fromAmount', 'toAmount'); }
         else if (name === 'date') out.push('date');
       } else {
-        if (name === 'wallet') out.push('accountId');
-        else if (name === 'category') out.push('categoryId');
-        else if (name === 'currency') out.push('currencyId');
+        if (name === 'category') out.push('categoryId');
         else if (name === 'amount') out.push('amount');
         else if (name === 'date') out.push('date');
       }
@@ -1400,28 +1403,32 @@ class Component extends DCLogic {
     return { type: form.type, wallet: this.accName(form.accountId), category: this.catName(form.categoryId),
       currency: this.curCode(form.currencyId), amount: clean(form.amount), date: clean(form.date) };
   }
+  // Разбор правит ТОЛЬКО сумму, категорию и дату.
+  // Счёт, валюта и вид операции — выбор пользователя, он не меняется никогда.
+  normAmount(v) {
+    let s = String(v == null ? '' : v).trim();
+    if (!s) return '';
+    s = s.replace(/\s+/g, '').replace(',', '.');
+    if (!/^\d*\.?\d*$/.test(s)) return '';
+    return s;
+  }
+  normDictation(t) {
+    return String(t || '').replace(/(\d)\s*(?:точка|точку|запятая|запятую|целых|целая)\s*(\d)/gi, '$1.$2');
+  }
   mutateForm(form, p, type, flags) {
     flags = flags || { autoConf: [], notes: [] };
     const clean = (v) => (v == null ? '' : String(v));
+    const num = (v) => this.normAmount(v);
     if (type === 'transfer') {
-      const wf = this.accIdByName(p.walletFrom); if (wf) form.fromAccountId = wf;
-      const wt = this.accIdByName(p.walletTo); if (wt) form.toAccountId = wt;
-      const nf = String(p.currencyFrom || '').trim();
-      const nt = String(p.currencyTo || '').trim();
-      if (nf) form.fromCurrencyId = this.resolveAcctCurrency(form.fromAccountId, nf, 'fromCurrencyId', flags);
-      else if (wf) form.fromCurrencyId = this.firstCurrencyOf(form.fromAccountId);
-      if (nt) form.toCurrencyId = this.resolveAcctCurrency(form.toAccountId, nt, 'toCurrencyId', flags);
-      else if (wt) form.toCurrencyId = this.firstCurrencyOf(form.toAccountId);
-      if (clean(p.amountFrom)) form.fromAmount = clean(p.amountFrom);
-      if (clean(p.amountTo)) { form.toAmount = clean(p.amountTo); form.toAmountTouched = true; }
+      const af = num(p.amountFrom) || num(p.amount);
+      const at = num(p.amountTo);
+      if (af) form.fromAmount = af;
+      if (at) { form.toAmount = at; form.toAmountTouched = true; }
       if (clean(p.date)) form.date = clean(p.date);
     } else {
-      const w = this.accIdByName(p.wallet); if (w) form.accountId = w;
-      const nc = String(p.currency || '').trim();
-      if (nc) form.currencyId = this.resolveAcctCurrency(form.accountId, nc, 'currencyId', flags);
-      else if (w) form.currencyId = this.firstCurrencyOf(w);
       const cat = this.catIdByName(p.category, type); if (cat) form.categoryId = cat;
-      if (clean(p.amount)) form.amount = clean(p.amount);
+      const a = num(p.amount);
+      if (a) form.amount = a;
       if (clean(p.date)) form.date = clean(p.date);
     }
     return form;
@@ -1461,6 +1468,7 @@ class Component extends DCLogic {
       incomeCategories: (d.categories || []).filter((c) => c.kind === 'income').map((c) => c.name),
       currencies: (d.currencies || []).map((c) => c.code),
     };
+    body.fields = ['amount', 'category', 'date']; // счёт, валюту и вид операции пользователь ставит сам
     if (existing) body.existing = existing;
     let resp;
     try {
@@ -1481,17 +1489,32 @@ class Component extends DCLogic {
     return p;
   }
 
-  onPText = (e) => this.setState({ pText: e.target.value, pParsed: false });
+  // Разбор запускается сам, когда диктовка в поле замолчала.
+  // Кнопка «Разобрать» остаётся для повторного разбора после правки текста руками.
+  onPText = (e) => {
+    const v = e.target.value;
+    this.setState({ pText: v, pParsed: false });
+    if (this._pTimer) clearTimeout(this._pTimer);
+    const t = v.trim();
+    if (t.length < 4 || t === this._lastAuto) return;
+    this._pTimer = setTimeout(() => {
+      if ((this.state.pText || '').trim() !== t || this.state.pBusy) return;
+      this._lastAuto = t;
+      this.doQaParse();
+    }, 1000);
+  };
   onPKey = (e) => { if (e.key === 'Enter') { e.preventDefault(); this.doQaParse(); } };
   doQaParse = async () => {
-    const text = (this.state.pText || '').trim();
+    const text = this.normDictation((this.state.pText || '').trim());
     if (!text || this.state.pBusy || !this.state.data) return;
+    if (this._pTimer) clearTimeout(this._pTimer);
+    this._lastAuto = (this.state.pText || '').trim();
     this.setState({ pBusy: true, pErr: '', pNotes: '' });
     try {
       const existing = this.state.qaEditId ? this.buildExisting(Object.assign({ type: this.state.qaTab }, this.state.qa)) : null;
       const p = await this.callParser(text, existing);
       this.setState((prev) => {
-        const type = ['transfer', 'income', 'expense'].includes(p.type) ? p.type : prev.qaTab;
+        const type = prev.qaTab; // вид операции выбирает пользователь, разбор его не меняет
         const flags = { autoConf: [], notes: [] };
         const form = this.mutateForm(Object.assign({}, prev.qa), p, type, flags);
         const editing = !!prev.qaEditId;
@@ -1511,14 +1534,14 @@ class Component extends DCLogic {
   onOpPText = (e) => this.setState({ opPText: e.target.value });
   onOpPKey = (e) => { if (e.key === 'Enter') { e.preventDefault(); this.doOpParse(); } };
   doOpParse = async () => {
-    const text = (this.state.opPText || '').trim();
+    const text = this.normDictation((this.state.opPText || '').trim());
     if (!text || this.state.opPBusy || !this.state.opEdit) return;
     this.setState({ opPBusy: true, opPErr: '', opPNotes: '' });
     try {
       const existing = this.buildExisting(this.state.opEdit);
       const p = await this.callParser(text, existing);
       this.setState((prev) => {
-        const type = ['transfer', 'income', 'expense'].includes(p.type) ? p.type : prev.opEdit.type;
+        const type = prev.opEdit.type;
         const flags = { autoConf: [], notes: [] };
         const form = this.mutateForm(Object.assign({}, prev.opEdit), p, type, flags);
         form.type = type;
@@ -1567,6 +1590,7 @@ class Component extends DCLogic {
       const keep = { accountId: qa.accountId, currencyId: qa.currencyId, categoryId: qa.categoryId, date: qa.date,
         fromAccountId: qa.fromAccountId, fromCurrencyId: qa.fromCurrencyId, toAccountId: qa.toAccountId, toCurrencyId: qa.toCurrencyId };
       this.setState({ qa: Object.assign(this.blankQa(), keep), qaError: '', submitting: false, qaEditId: null, pText: '', pBusy: false, pErr: '', pNotes: '', pConf: [], pChg: [], pParsed: false });
+      this._lastAuto = '';
       this.focusParse();
       this.reload();
     } catch (e) { this.setState({ qaError: e.message || String(e), submitting: false }); }
@@ -1655,7 +1679,11 @@ class Component extends DCLogic {
     });
     const recentRows = byEntry.slice(0, 20).map((op) => Object.assign(this.opRow(op), { onEditInline: this.editRecent(op), onDel: this.deleteOp(op.id) }));
     // виджет: расходы текущего месяца по категориям
-    const ym = new Date().toISOString().slice(0, 7);
+    const mOff = this.state.monthOff || 0;
+    const mDate = new Date(); mDate.setDate(1); mDate.setMonth(mDate.getMonth() - mOff);
+    const ym = mDate.getFullYear() + '-' + String(mDate.getMonth() + 1).padStart(2, '0');
+    const MN = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+    const monthTitle = MN[mDate.getMonth()] + ' ' + mDate.getFullYear();
     const catMap = {};
     let monthCatsTotal = 0;
     d.operations.forEach((op) => {
@@ -1673,6 +1701,9 @@ class Component extends DCLogic {
     return {
       recentRows, recentEmpty: recentRows.length === 0,
       monthCats, monthCatsEmpty: monthCats.length === 0, monthCatsTotalTxt: F.formatBase(monthCatsTotal, d.currencies),
+      monthTitle, monthPrev: this.monthPrev, monthNext: this.monthNext, monthNextOff: mOff === 0,
+      monthEmptyTxt: mOff === 0 ? 'В этом месяце расходов пока нет' : 'В этом месяце расходов не было',
+      monthNextStyle: 'width:32px;height:32px;border:1px solid #e0e4e0;border-radius:9px;font-size:14px;font-weight:800;background:#fff;color:' + (mOff === 0 ? '#c9cec9' : '#5b635d') + ';cursor:' + (mOff === 0 ? 'default' : 'pointer') + ';',
       homeGroups: groups, accountsSummaryTxt: homeAccts.length + ' счетов · ' + d.currencies.length + ' валют',
       accountOptions: d.accounts.map((a) => ({ id: a.id, label: a.name })), qaTabs,
       qa: this.state.qa, qaError: this.state.qaError,
